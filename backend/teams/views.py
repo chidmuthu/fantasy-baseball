@@ -1,0 +1,101 @@
+from rest_framework import viewsets, status, permissions
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
+from .models import Team
+from .serializers import (
+    TeamSerializer, 
+    TeamCreateSerializer, 
+    TeamUpdateSerializer,
+    UserRegistrationSerializer
+)
+
+
+class IsTeamOwnerOrAdmin(permissions.BasePermission):
+    """Custom permission to only allow team owners or admins to edit teams"""
+    
+    def has_object_permission(self, request, view, obj):
+        # Admin users can do anything
+        if request.user.is_staff:
+            return True
+        
+        # Team owners can edit their own team
+        return obj.owner == request.user
+
+
+class TeamViewSet(viewsets.ModelViewSet):
+    queryset = Team.objects.all()
+    serializer_class = TeamSerializer
+    permission_classes = [IsTeamOwnerOrAdmin]
+    
+    def get_queryset(self):
+        """Filter queryset based on user permissions"""
+        if self.request.user.is_staff:
+            return Team.objects.all()
+        return Team.objects.filter(owner=self.request.user)
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return TeamCreateSerializer
+        elif self.action in ['update', 'partial_update']:
+            return TeamUpdateSerializer
+        return TeamSerializer
+    
+    @action(detail=False, methods=['get'])
+    def my_team(self, request):
+        """Get the current user's team"""
+        team = get_object_or_404(Team, owner=request.user)
+        serializer = self.get_serializer(team)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def adjust_pom(self, request, pk=None):
+        """Admin action to adjust team POM balance"""
+        if not request.user.is_staff:
+            return Response(
+                {'error': 'Only admins can adjust POM'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        team = self.get_object()
+        amount = request.data.get('amount')
+        
+        if amount is None:
+            return Response(
+                {'error': 'Amount is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            amount = int(amount)
+        except ValueError:
+            return Response(
+                {'error': 'Amount must be an integer'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if amount > 0:
+            team.add_pom(amount)
+        else:
+            team.deduct_pom(abs(amount))
+        
+        serializer = self.get_serializer(team)
+        return Response(serializer.data)
+
+
+class UserRegistrationViewSet(viewsets.GenericViewSet):
+    serializer_class = UserRegistrationSerializer
+    permission_classes = [permissions.AllowAny]
+    
+    def create(self, request):
+        """Register a new user and create their team"""
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response({
+                'message': 'User registered successfully',
+                'user_id': user.id,
+                'team_id': user.team.id
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
