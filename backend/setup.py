@@ -102,8 +102,9 @@ def main():
     if not run_command(f"{python_path} manage.py migrate", "Apply migrations"):
         sys.exit(1)
     
-    if not run_command(f"{python_path} manage.py create_test_data", "Create test data"):
-        sys.exit(1)
+    if args.clean:
+        if not run_command(f"{python_path} manage.py create_test_data --clear", "Create test data"):
+            sys.exit(1)
     
     # Create superuser
     if args.clean:

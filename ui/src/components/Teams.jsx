@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { Link } from 'react-router-dom'
 import api from '../services/api'
 
 function Teams() {
@@ -81,40 +82,60 @@ function Teams() {
 
       <div className="grid">
         {teams.map(team => (
-          <div key={team.id} className="card">
-            <h3>{team.name}</h3>
-            
-            <div className="prospect-info">
-              <p><span>Team ID:</span> {team.id}</p>
-              <p><span>Prospects:</span> {team.prospects?.length || 0}</p>
+          <Link 
+            key={team.id} 
+            to={`/teams/${team.id}`} 
+            className="team-card-link"
+          >
+            <div className="card" style={{ cursor: 'pointer' }}>
+              <h3>{team.name}</h3>
               
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
-                <span><strong>POM Balance:</strong></span>
-                <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#2a5298' }}>
-                  {team.pom_balance}
+              <div className="prospect-info">
+                <p><span>Prospects:</span> {team.prospects?.length || 0}</p>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+                  <span><strong>POM Balance:</strong></span>
+                  <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#2a5298' }}>
+                    {team.pom_balance}
+                  </span>
+                </div>
+              </div>
+
+              {team.prospects && team.prospects.length > 0 && (
+                <div style={{ marginTop: '15px' }}>
+                  <h4>Recent Prospects:</h4>
+                  <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                    {team.prospects.slice(-3).map(prospect => (
+                      <div key={prospect.id} style={{ 
+                        padding: '8px', 
+                        margin: '5px 0', 
+                        backgroundColor: '#f8f9fa', 
+                        borderRadius: '4px',
+                        fontSize: '0.9rem'
+                      }}>
+                        <strong>{prospect.name}</strong> - {prospect.position} ({prospect.organization}) - {prospect.level}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ 
+                marginTop: '15px', 
+                paddingTop: '15px', 
+                borderTop: '1px solid #eee',
+                textAlign: 'center'
+              }}>
+                <span style={{ 
+                  color: '#2a5298', 
+                  fontSize: '0.9rem',
+                  fontWeight: 'bold'
+                }}>
+                  Click to view all prospects →
                 </span>
               </div>
             </div>
-
-            {team.prospects && team.prospects.length > 0 && (
-              <div style={{ marginTop: '15px' }}>
-                <h4>Recent Prospects:</h4>
-                <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                  {team.prospects.slice(-3).map(prospect => (
-                    <div key={prospect.id} style={{ 
-                      padding: '8px', 
-                      margin: '5px 0', 
-                      backgroundColor: '#f8f9fa', 
-                      borderRadius: '4px',
-                      fontSize: '0.9rem'
-                    }}>
-                      <strong>{prospect.name}</strong> - {prospect.position} ({prospect.organization})
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          </Link>
         ))}
       </div>
     </div>

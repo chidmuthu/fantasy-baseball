@@ -60,22 +60,21 @@ class Command(BaseCommand):
 
         # Create test prospects
         prospect_data = [
-            {'name': 'Jackson Holliday', 'position': 'SS', 'organization': 'Baltimore Orioles', 'date_of_birth': '2003-01-01'},
-            {'name': 'Junior Caminero', 'position': '3B', 'organization': 'Tampa Bay Rays', 'date_of_birth': '2003-03-02'},
-            {'name': 'Wyatt Flores', 'position': 'P', 'organization': 'Milwaukee Brewers', 'date_of_birth': '2004-05-03'},
-            {'name': 'Ethan Salas', 'position': 'C', 'organization': 'San Diego Padres', 'date_of_birth': '2006-07-04'},
-            {'name': 'Jackson Chourio', 'position': 'OF', 'organization': 'Milwaukee Brewers', 'date_of_birth': '2004-09-05'},
-            {'name': 'Paul Skenes', 'position': 'P', 'organization': 'Pittsburgh Pirates', 'date_of_birth': '2002-11-06'},
-            {'name': 'Dylan Crews', 'position': 'OF', 'organization': 'Washington Nationals', 'date_of_birth': '2002-12-07'},
-            {'name': 'Roki Sasaki', 'position': 'P', 'organization': 'Los Angeles Dodgers', 'date_of_birth': '2001-02-08'},
+            {'name': 'Jackson Holliday', 'position': 'SS', 'organization': 'Baltimore Orioles', 'date_of_birth': '2003-01-01', 'level': 'A', 'eta': 2025},
+            {'name': 'Junior Caminero', 'position': '3B', 'organization': 'Tampa Bay Rays', 'date_of_birth': '2003-03-02', 'level': 'A', 'eta': 2025},
+            {'name': 'Wyatt Flores', 'position': 'P', 'organization': 'Milwaukee Brewers', 'date_of_birth': '2004-05-03', 'level': 'A+', 'eta': 2027},
+            {'name': 'Ethan Salas', 'position': 'C', 'organization': 'San Diego Padres', 'date_of_birth': '2006-07-04', 'level': 'AAA', 'eta': 2025},
+            {'name': 'Jackson Chourio', 'position': 'OF', 'organization': 'Milwaukee Brewers', 'date_of_birth': '2004-09-05', 'level': 'A', 'eta': 2025},
+            {'name': 'Paul Skenes', 'position': 'P', 'organization': 'Pittsburgh Pirates', 'date_of_birth': '2002-11-06', 'level': 'MLB', 'eta': 2024},
+            {'name': 'Dylan Crews', 'position': 'OF', 'organization': 'Washington Nationals', 'date_of_birth': '2002-12-07', 'level': 'AA', 'eta': 2026},
+            {'name': 'Roki Sasaki', 'position': 'P', 'organization': 'Los Angeles Dodgers', 'date_of_birth': '2001-02-08', 'level': 'ROK', 'eta': 2028},
         ]
 
         prospects = []
         for data in prospect_data:
             prospect = Prospect.objects.create(
                 **data,
-                created_by=test_teams[0],  # First team creates all prospects
-                notes=f'Test prospect created for development'
+                created_by=test_teams[0]
             )
             prospects.append(prospect)
             self.stdout.write(f'Created prospect: {prospect.name}')

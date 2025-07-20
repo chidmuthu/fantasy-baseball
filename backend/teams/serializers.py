@@ -21,7 +21,8 @@ class TeamSerializer(serializers.ModelSerializer):
     
     def get_prospects(self, obj):
         from prospects.serializers import ProspectSerializer
-        prospects = obj.prospects.all()
+        # Get all prospects for this team, regardless of permissions
+        prospects = obj.prospects.all().select_related('team')
         return ProspectSerializer(prospects, many=True, context=self.context).data
 
 

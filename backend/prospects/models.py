@@ -17,12 +17,22 @@ class Prospect(models.Model):
         ('UTIL', 'Utility'),
     ]
     
+    LEVEL_CHOICES = [
+        ('ROK', 'Rookie'),
+        ('A', 'A'),
+        ('A+', 'A+'),
+        ('AA', 'AA'),
+        ('AAA', 'AAA'),
+        ('MLB', 'MLB'),
+    ]
+    
     # Basic info
     name = models.CharField(max_length=100)
     position = models.CharField(max_length=10, choices=POSITION_CHOICES)
     organization = models.CharField(max_length=100)  # MLB team
     date_of_birth = models.DateField()
-    notes = models.TextField(blank=True)
+    level = models.CharField(max_length=3, choices=LEVEL_CHOICES, default='A')
+    eta = models.IntegerField(help_text="Expected year of MLB arrival")
     
     # Farm system
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True, related_name='prospects')
@@ -39,7 +49,8 @@ class Prospect(models.Model):
             models.Index(fields=['team']),
             models.Index(fields=['organization']),
             models.Index(fields=['position']),
-            models.Index(fields=['created_by']),
+            models.Index(fields=['level']),
+            models.Index(fields=['eta'])
         ]
     
     def __str__(self):

@@ -4,14 +4,14 @@ from .models import Prospect
 
 @admin.register(Prospect)
 class ProspectAdmin(admin.ModelAdmin):
-    list_display = ['name', 'position', 'organization', 'age', 'team', 'created_by', 'created_at']
-    list_filter = ['position', 'organization', 'team', 'created_at']
-    search_fields = ['name', 'organization', 'notes']
-    readonly_fields = ['created_at', 'updated_at', 'acquired_at']
+    list_display = ['name', 'position', 'organization', 'level', 'eta', 'age', 'team', 'created_by', 'created_at']
+    list_filter = ['position', 'organization', 'level', 'eta', 'team', 'created_at']
+    search_fields = ['name', 'organization']
+    readonly_fields = ['created_at', 'updated_at', 'acquired_at', 'date_of_birth', 'age']
     
     fieldsets = (
         ('Basic Information', {
-            'fields': ('name', 'position', 'organization', 'age', 'notes')
+            'fields': ('name', 'position', 'organization', 'level', 'eta', 'date_of_birth', 'age')
         }),
         ('Team Assignment', {
             'fields': ('team', 'acquired_at')

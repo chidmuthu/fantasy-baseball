@@ -13,8 +13,9 @@ function Bidding() {
     name: '',
     position: '',
     organization: '',
-    age: '',
-    notes: '',
+    dateOfBirth: '',
+    level: 'A',
+    eta: new Date().getFullYear() + 2,
     startingBid: 5
   })
 
@@ -44,8 +45,9 @@ function Bidding() {
         name: nominationForm.name,
         position: nominationForm.position,
         organization: nominationForm.organization,
-        age: parseInt(nominationForm.age),
-        notes: nominationForm.notes
+        date_of_birth: nominationForm.dateOfBirth,
+        level: nominationForm.level,
+        eta: parseInt(nominationForm.eta)
       }
       
       await api.createBid(prospectData, nominationForm.startingBid)
@@ -54,8 +56,9 @@ function Bidding() {
         name: '',
         position: '',
         organization: '',
-        age: '',
-        notes: '',
+        dateOfBirth: '',
+        level: 'A',
+        eta: new Date().getFullYear() + 2,
         startingBid: 5
       })
       loadActiveBids() // Refresh the bids
@@ -145,10 +148,9 @@ function Bidding() {
               <div className="prospect-info">
                 <p><span>Position:</span> {bid.prospect.position}</p>
                 <p><span>Organization:</span> {bid.prospect.organization}</p>
+                <p><span>Level:</span> {bid.prospect.level}</p>
+                <p><span>ETA:</span> {bid.prospect.eta}</p>
                 <p><span>Age:</span> {bid.prospect.age}</p>
-                {bid.prospect.notes && (
-                  <p><span>Notes:</span> {bid.prospect.notes}</p>
-                )}
               </div>
               
               <div className="bid-section">
@@ -271,27 +273,46 @@ function Bidding() {
               </div>
               
               <div className="form-group">
-                <label htmlFor="age">Age:</label>
+                <label htmlFor="dateOfBirth">Date of Birth:</label>
                 <input
-                  id="age"
-                  type="number"
-                  min="16"
-                  max="30"
+                  id="dateOfBirth"
+                  type="date"
                   className="form-control"
-                  value={nominationForm.age}
-                  onChange={(e) => setNominationForm({...nominationForm, age: e.target.value})}
+                  value={nominationForm.dateOfBirth}
+                  onChange={(e) => setNominationForm({...nominationForm, dateOfBirth: e.target.value})}
                   required
                 />
               </div>
               
               <div className="form-group">
-                <label htmlFor="notes">Notes (Optional):</label>
-                <textarea
-                  id="notes"
+                <label htmlFor="level">Level:</label>
+                <select
+                  id="level"
                   className="form-control"
-                  value={nominationForm.notes}
-                  onChange={(e) => setNominationForm({...nominationForm, notes: e.target.value})}
-                  rows="3"
+                  value={nominationForm.level}
+                  onChange={(e) => setNominationForm({...nominationForm, level: e.target.value})}
+                  required
+                >
+                  <option value="ROK">Rookie</option>
+                  <option value="A">A</option>
+                  <option value="A+">A+</option>
+                  <option value="AA">AA</option>
+                  <option value="AAA">AAA</option>
+                  <option value="MLB">MLB</option>
+                </select>
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="eta">ETA (Year):</label>
+                <input
+                  id="eta"
+                  type="number"
+                  min={new Date().getFullYear()}
+                  max={new Date().getFullYear() + 10}
+                  className="form-control"
+                  value={nominationForm.eta}
+                  onChange={(e) => setNominationForm({...nominationForm, eta: e.target.value})}
+                  required
                 />
               </div>
               

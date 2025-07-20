@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } f
 import FarmSystem from './components/FarmSystem'
 import Bidding from './components/Bidding'
 import Teams from './components/Teams'
+import TeamDetail from './components/TeamDetail'
 import Login from './components/Login'
 import { AuthProvider, useAuth } from './context/AuthContext'
 
@@ -94,6 +95,11 @@ function AppContent() {
           <Route path="/teams" element={
             <ProtectedRoute>
               <Teams />
+            </ProtectedRoute>
+          } />
+          <Route path="/teams/:teamId" element={
+            <ProtectedRoute>
+              <TeamDetail />
             </ProtectedRoute>
           } />
         </Routes>

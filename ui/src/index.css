@@ -70,6 +70,16 @@ body {
   box-shadow: 0 6px 12px rgba(0,0,0,0.15);
 }
 
+.team-card-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.team-card-link:hover .card {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
 .card h2 {
   color: #2a5298;
   margin-bottom: 15px;

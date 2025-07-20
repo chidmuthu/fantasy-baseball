@@ -69,10 +69,9 @@ function FarmSystem() {
                     <h4>{prospect.name}</h4>
                     <p><span>Position:</span> {prospect.position}</p>
                     <p><span>Organization:</span> {prospect.organization}</p>
+                    <p><span>Level:</span> {prospect.level}</p>
+                    <p><span>ETA:</span> {prospect.eta}</p>
                     <p><span>Age:</span> {prospect.age}</p>
-                    {prospect.notes && (
-                      <p><span>Notes:</span> {prospect.notes}</p>
-                    )}
                   </div>
                 ))}
               </div>

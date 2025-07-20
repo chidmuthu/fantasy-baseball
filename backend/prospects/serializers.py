@@ -12,7 +12,7 @@ class ProspectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Prospect
         fields = [
-            'id', 'name', 'position', 'organization', 'date_of_birth', 'age', 'notes',
+            'id', 'name', 'position', 'organization', 'date_of_birth', 'age', 'level', 'eta',
             'team', 'acquired_at', 'created_by', 'created_at', 'updated_at',
             'is_available', 'current_bid'
         ]
@@ -54,7 +54,7 @@ class ProspectSerializer(serializers.ModelSerializer):
 class ProspectCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Prospect
-        fields = ['name', 'position', 'organization', 'date_of_birth', 'notes']
+        fields = ['name', 'position', 'organization', 'date_of_birth', 'level', 'eta']
     
     
     def create(self, validated_data):
@@ -65,7 +65,7 @@ class ProspectCreateSerializer(serializers.ModelSerializer):
 class ProspectUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Prospect
-        fields = ['name', 'position', 'organization', 'notes']
+        fields = ['name', 'position', 'organization', 'level', 'eta']
     
     def validate(self, data):
         # Only allow updates if user owns the prospect or is admin

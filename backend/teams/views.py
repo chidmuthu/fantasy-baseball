@@ -15,12 +15,23 @@ from .serializers import (
 class IsTeamOwnerOrAdmin(permissions.BasePermission):
     """Custom permission to only allow team owners or admins to edit teams"""
     
+    def has_permission(self, request, view):
+        # Allow all authenticated users to view teams
+        if request.method in permissions.SAFE_METHODS:
+            return request.user.is_authenticated
+        # For write operations, use object-level permissions
+        return request.user.is_authenticated
+    
     def has_object_permission(self, request, view, obj):
         # Admin users can do anything
         if request.user.is_staff:
             return True
         
-        # Team owners can edit their own team
+        # For read operations, allow all authenticated users
+        if request.method in permissions.SAFE_METHODS:
+            return request.user.is_authenticated
+        
+        # For write operations, only team owners can edit their own team
         return obj.owner == request.user
 
 
@@ -31,9 +42,9 @@ class TeamViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """Filter queryset based on user permissions"""
-        if self.request.user.is_staff:
-            return Team.objects.all()
-        return Team.objects.filter(owner=self.request.user)
+        # All authenticated users can view all teams
+        # But only team owners or admins can edit teams (handled by permission_classes)
+        return Team.objects.all()
     
     def get_serializer_class(self):
         if self.action == 'create':
