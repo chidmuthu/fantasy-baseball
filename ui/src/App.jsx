@@ -2,7 +2,6 @@ import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom'
 import FarmSystem from './components/FarmSystem'
 import Bidding from './components/Bidding'
-import Teams from './components/Teams'
 import TeamDetail from './components/TeamDetail'
 import Login from './components/Login'
 import { AuthProvider, useAuth } from './context/AuthContext'
@@ -24,12 +23,6 @@ function Navigation() {
         className={`nav-link ${location.pathname === '/bidding' ? 'active' : ''}`}
       >
         Bidding
-      </Link>
-      <Link 
-        to="/teams" 
-        className={`nav-link ${location.pathname === '/teams' ? 'active' : ''}`}
-      >
-        Teams
       </Link>
       {user && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -90,11 +83,6 @@ function AppContent() {
           <Route path="/bidding" element={
             <ProtectedRoute>
               <Bidding />
-            </ProtectedRoute>
-          } />
-          <Route path="/teams" element={
-            <ProtectedRoute>
-              <Teams />
             </ProtectedRoute>
           } />
           <Route path="/teams/:teamId" element={

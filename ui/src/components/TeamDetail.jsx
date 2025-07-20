@@ -72,8 +72,8 @@ function TeamDetail() {
         <div style={{ color: 'red', padding: '10px', backgroundColor: '#fee', borderRadius: '5px' }}>
           {error}
         </div>
-        <Link to="/teams" className="btn btn-primary" style={{ marginTop: '10px' }}>
-          Back to Teams
+        <Link to="/" className="btn btn-primary" style={{ marginTop: '10px' }}>
+          Back to Farm System
         </Link>
       </div>
     )
@@ -84,8 +84,8 @@ function TeamDetail() {
       <div>
         <h2>Team Details</h2>
         <p>Team not found.</p>
-        <Link to="/teams" className="btn btn-primary" style={{ marginTop: '10px' }}>
-          Back to Teams
+        <Link to="/" className="btn btn-primary" style={{ marginTop: '10px' }}>
+          Back to Farm System
         </Link>
       </div>
     )
@@ -96,8 +96,8 @@ function TeamDetail() {
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h2>{team.name}</h2>
-          <Link to="/teams" className="btn btn-secondary">
-            Back to Teams
+          <Link to="/" className="btn btn-secondary">
+            Back to Farm System
           </Link>
         </div>
         
