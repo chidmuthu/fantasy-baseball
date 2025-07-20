@@ -54,10 +54,20 @@ class BidViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def place_bid(self, request, pk=None):
         """Place a bid on an active auction"""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.info(f"Place bid request received for bid {pk}")
+        logger.info(f"Request data: {request.data}")
+        logger.info(f"User team: {request.user.team.name}")
+        logger.info(f"User team POM balance: {request.user.team.pom_balance}")
+        
         bid = self.get_object()
+        logger.info(f"Bid found: {bid.prospect.name} - current bid: {bid.current_bid} POM")
         
         # Check if user is trying to bid on their own auction
         if bid.current_bidder == request.user.team:
+            logger.warning(f"User {request.user.team.name} tried to outbid themselves")
             return Response(
                 {'error': 'You cannot outbid yourself'}, 
                 status=status.HTTP_400_BAD_REQUEST
@@ -68,14 +78,19 @@ class BidViewSet(viewsets.ModelViewSet):
             context={'request': request, 'bid': bid}
         )
         
+        logger.info(f"Serializer validation starting...")
         if serializer.is_valid():
+            logger.info("Serializer validation passed")
             try:
                 updated_bid = serializer.save()
+                logger.info(f"Bid placed successfully: {updated_bid.current_bid} POM by {updated_bid.current_bidder.name}")
                 return Response(BidSerializer(updated_bid).data)
             except serializers.ValidationError as e:
+                logger.error(f"Validation error in save: {e}")
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            logger.error(f"Serializer validation failed: {serializer.errors}")
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=True, methods=['post'])
     def complete(self, request, pk=None):

@@ -1,5 +1,8 @@
 from rest_framework import serializers
 from .models import Bid, BidHistory
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class BidHistorySerializer(serializers.ModelSerializer):
@@ -57,11 +60,30 @@ class BidCreateSerializer(serializers.ModelSerializer):
         return value
     
     def validate(self, data):
-        # Check if team can afford the starting bid
+        # Check if team can afford the starting bid (considering all active bids)
         request = self.context.get('request')
         if request and hasattr(request, 'user'):
-            if not request.user.team.can_afford_bid(data['starting_bid']):
-                raise serializers.ValidationError("Insufficient POM balance")
+            available_pom = request.user.team.get_available_pom()
+            can_afford = request.user.team.can_afford_bid(data['starting_bid'])
+            
+            logger.info(f"Bid creation validation for team {request.user.team.name}:")
+            logger.info(f"  - Current balance: {request.user.team.pom_balance} POM")
+            logger.info(f"  - Available POM: {available_pom} POM")
+            logger.info(f"  - Starting bid: {data['starting_bid']} POM")
+            logger.info(f"  - Can afford: {can_afford}")
+            
+            if not can_afford:
+                error_msg = (
+                    f"Insufficient available POM. You have {available_pom} POM available "
+                    f"(current balance: {request.user.team.pom_balance} POM, "
+                    f"committed to other bids: {request.user.team.pom_balance - available_pom} POM)"
+                )
+                logger.warning(f"  - Validation failed: {error_msg}")
+                raise serializers.ValidationError({
+                    'non_field_errors': [error_msg]
+                })
+            
+            logger.info(f"  - Validation passed")
         return data
     
     def create(self, validated_data):
@@ -95,32 +117,62 @@ class BidPlaceSerializer(serializers.Serializer):
     def validate_amount(self, value):
         bid = self.context.get('bid')
         if bid and value <= bid.current_bid:
-            raise serializers.ValidationError("Bid must be higher than current bid")
+            raise serializers.ValidationError(f"Bid must be higher than current bid of {bid.current_bid} POM")
         return value
     
     def validate(self, data):
         request = self.context.get('request')
         bid = self.context.get('bid')
         
-        if not request or not bid:
-            raise serializers.ValidationError("Invalid context")
+        logger.info(f"BidPlaceSerializer.validate() called with data: {data}")
         
-        # Check if team can afford the bid
-        if not request.user.team.can_afford_bid(data['amount']):
-            raise serializers.ValidationError("Insufficient POM balance")
+        if not request or not bid:
+            logger.error("Invalid context - missing request or bid")
+            raise serializers.ValidationError("Invalid context")
         
         # Check if bid is still active
         if bid.status != 'active':
+            logger.warning(f"Bid {bid.id} is not active (status: {bid.status})")
             raise serializers.ValidationError("Cannot bid on inactive auction")
         
+        # Check if team can afford the bid (considering all active bids)
+        available_pom = request.user.team.get_available_pom(exclude_bid=bid)
+        can_afford = request.user.team.can_afford_bid(data['amount'], exclude_bid=bid)
+        
+        logger.info(f"Bid validation for team {request.user.team.name}:")
+        logger.info(f"  - Current balance: {request.user.team.pom_balance} POM")
+        logger.info(f"  - Available POM: {available_pom} POM")
+        logger.info(f"  - Bid amount: {data['amount']} POM")
+        logger.info(f"  - Can afford: {can_afford}")
+        
+        if not can_afford:
+            error_msg = (
+                f"Insufficient available POM. You have {available_pom} POM available "
+                f"(current balance: {request.user.team.pom_balance} POM, "
+                f"committed to other bids: {request.user.team.pom_balance - available_pom} POM)"
+            )
+            logger.warning(f"  - Validation failed: {error_msg}")
+            logger.warning(f"  - Raising ValidationError with non_field_errors")
+            raise serializers.ValidationError({
+                'non_field_errors': [error_msg]
+            })
+        
+        logger.info(f"  - Validation passed")
         return data
     
     def save(self, **kwargs):
         request = self.context.get('request')
         bid = self.context.get('bid')
         
+        logger.info(f"BidPlaceSerializer.save() called")
+        logger.info(f"  - Team: {request.user.team.name}")
+        logger.info(f"  - Amount: {self.validated_data['amount']}")
+        logger.info(f"  - Bid ID: {bid.id}")
+        
         try:
             bid.place_bid(request.user.team, self.validated_data['amount'])
+            logger.info(f"  - place_bid() completed successfully")
             return bid
         except ValueError as e:
+            logger.error(f"  - place_bid() failed with ValueError: {e}")
             raise serializers.ValidationError(str(e)) 

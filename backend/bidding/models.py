@@ -3,6 +3,9 @@ from django.core.validators import MinValueValidator
 from django.utils import timezone
 from teams.models import Team
 from prospects.models import Prospect
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Bid(models.Model):
@@ -64,14 +67,25 @@ class Bid(models.Model):
     
     def place_bid(self, team, amount):
         """Place a new bid on this auction"""
+        logger.info(f"Attempting to place bid: {amount} POM by team {team.name} on prospect {self.prospect.name}")
+        
         if self.status != 'active':
+            logger.warning(f"Bid failed: Cannot bid on inactive auction (status: {self.status})")
             raise ValueError("Cannot bid on inactive auction")
         
         if amount <= self.current_bid:
-            raise ValueError("Bid must be higher than current bid")
+            logger.warning(f"Bid failed: Amount {amount} must be higher than current bid {self.current_bid}")
+            raise ValueError(f"Bid must be higher than current bid of {self.current_bid} POM")
         
-        if not team.can_afford_bid(amount):
-            raise ValueError("Team cannot afford this bid")
+        if not team.can_afford_bid(amount, exclude_bid=self):
+            available_pom = team.get_available_pom(exclude_bid=self)
+            error_msg = (
+                f"Team cannot afford this bid. Available POM: {available_pom} "
+                f"(current balance: {team.pom_balance} POM, "
+                f"committed to other bids: {team.pom_balance - available_pom} POM)"
+            )
+            logger.warning(f"Bid failed: {error_msg}")
+            raise ValueError(error_msg)
         
         # Record the bid in history
         BidHistory.objects.create(
@@ -91,12 +105,7 @@ class Bid(models.Model):
         # Update expiration time (extends the bid when someone bids)
         self.update_expiration_time()
         
-        # Trigger real-time notification
-        try:
-            from .tasks import notify_new_bid
-            notify_new_bid.delay(self.id)
-        except Exception as e:
-            print(f"Warning: Could not send bid notification: {e}")
+        logger.info(f"Bid placed successfully: {amount} POM by {team.name} on {self.prospect.name}")
         
         return True
     

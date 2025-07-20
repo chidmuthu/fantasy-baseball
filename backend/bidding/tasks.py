@@ -72,7 +72,7 @@ def notify_bid_completed(bid_id):
             }
         )
         
-        # Send to winning team's specific channel
+        # Send to winning team's specific channel with updated POM balance
         async_to_sync(channel_layer.group_send)(
             f"team_{bid.current_bidder.id}",
             {
@@ -82,7 +82,21 @@ def notify_bid_completed(bid_id):
                     'prospect_position': bid.prospect.position,
                     'amount_paid': bid.current_bid,
                     'new_balance': bid.current_bidder.pom_balance,
+                    'available_pom': bid.current_bidder.get_available_pom(),
                     'acquired_at': bid.completed_at.isoformat() if bid.completed_at else None,
+                }
+            }
+        )
+        
+        # Send team update to winning team
+        async_to_sync(channel_layer.group_send)(
+            f"team_{bid.current_bidder.id}",
+            {
+                'type': 'team_update',
+                'data': {
+                    'pom_balance': bid.current_bidder.pom_balance,
+                    'available_pom': bid.current_bidder.get_available_pom(),
+                    'message': f'Prospect acquired: {bid.prospect.name} for {bid.current_bid} POM'
                 }
             }
         )
@@ -93,6 +107,55 @@ def notify_bid_completed(bid_id):
         print(f"❌ Bid {bid_id} not found for notification")
     except Exception as e:
         print(f"❌ Error sending bid completion notification: {str(e)}")
+
+
+@shared_task
+def notify_bid_created(bid_id):
+    """Send WebSocket notification when a new bid is created (nomination)"""
+    try:
+        bid = Bid.objects.get(id=bid_id)
+        channel_layer = get_channel_layer()
+        
+        notification_data = {
+            'prospect_name': bid.prospect.name,
+            'prospect_position': bid.prospect.position,
+            'organization': bid.prospect.organization,
+            'level': bid.prospect.level,
+            'eta': bid.prospect.eta,
+            'starting_bid': bid.starting_bid,
+            'nominator': bid.nominator.name,
+            'expires_at': bid.expires_at.isoformat() if bid.expires_at else None,
+            'bid_id': bid.id,
+        }
+        
+        # Send to general bidding channel
+        async_to_sync(channel_layer.group_send)(
+            "bidding_updates",
+            {
+                'type': 'new_bid',
+                'data': notification_data
+            }
+        )
+        
+        # Send team update to the nominating team
+        async_to_sync(channel_layer.group_send)(
+            f"team_{bid.nominator.id}",
+            {
+                'type': 'team_update',
+                'data': {
+                    'pom_balance': bid.nominator.pom_balance,
+                    'available_pom': bid.nominator.get_available_pom(),
+                    'message': f'Prospect nominated: {bid.prospect.name} for {bid.starting_bid} POM'
+                }
+            }
+        )
+        
+        print(f"📢 Sent WebSocket notifications for new nomination: {bid.prospect.name}")
+        
+    except Bid.DoesNotExist:
+        print(f"❌ Bid {bid_id} not found for notification")
+    except Exception as e:
+        print(f"❌ Error sending new bid notification: {str(e)}")
 
 
 @shared_task
@@ -128,6 +191,19 @@ def notify_new_bid(bid_id):
                 'type': 'bid_update',
                 'bid_id': bid.id,
                 'data': notification_data
+            }
+        )
+        
+        # Send team update to the bidding team
+        async_to_sync(channel_layer.group_send)(
+            f"team_{bid.current_bidder.id}",
+            {
+                'type': 'team_update',
+                'data': {
+                    'pom_balance': bid.current_bidder.pom_balance,
+                    'available_pom': bid.current_bidder.get_available_pom(),
+                    'message': f'Bid placed: {bid.current_bid} POM on {bid.prospect.name}'
+                }
             }
         )
         

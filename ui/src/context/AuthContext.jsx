@@ -91,6 +91,17 @@ export function AuthProvider({ children }) {
         }
     }
 
+    const refreshTeam = async () => {
+        try {
+            const teamData = await api.getMyTeam()
+            setTeam(teamData)
+            return { success: true }
+        } catch (error) {
+            console.error('Failed to refresh team data:', error)
+            return { success: false, error: error.message }
+        }
+    }
+
     const value = {
         user,
         team,
@@ -100,6 +111,7 @@ export function AuthProvider({ children }) {
         register,
         logout,
         updateTeam,
+        refreshTeam,
         isAuthenticated: !!user,
     }
 

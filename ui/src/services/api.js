@@ -51,7 +51,74 @@ class ApiService {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+                console.log('Error response data:', errorData);
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                // Handle different error response formats
+                let errorMessage = '';
+                
+                // First, try to get non-field errors (general validation errors)
+                if (errorData.non_field_errors && errorData.non_field_errors.length > 0) {
+                    errorMessage = errorData.non_field_errors[0];
+                } else if (errorData.error) {
+                    errorMessage = errorData.error;
+                } else if (errorData.detail) {
+                    errorMessage = errorData.detail;
+                } else if (typeof errorData === 'string') {
+                    errorMessage = errorData;
+                } else {
+                    // Try to extract error from field-specific errors (Django REST Framework serializer errors)
+                    const errorKeys = Object.keys(errorData);
+                    if (errorKeys.length > 0) {
+                        // Look for common field names that might contain the main error
+                        const priorityFields = ['amount', 'starting_bid', 'prospect_data'];
+                        let foundError = false;
+                        
+                        for (const field of priorityFields) {
+                            if (errorData[field]) {
+                                const fieldError = errorData[field];
+                                if (Array.isArray(fieldError)) {
+                                    errorMessage = fieldError[0];
+                                    foundError = true;
+                                    break;
+                                } else if (typeof fieldError === 'string') {
+                                    errorMessage = fieldError;
+                                    foundError = true;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        // If no priority field found, use the first available error
+                        if (!foundError) {
+                            const firstKey = errorKeys[0];
+                            const firstError = errorData[firstKey];
+                            if (Array.isArray(firstError)) {
+                                errorMessage = firstError[0];
+                            } else if (typeof firstError === 'string') {
+                                errorMessage = firstError;
+                            } else if (typeof firstError === 'object') {
+                                // Handle nested error objects
+                                const nestedKeys = Object.keys(firstError);
+                                if (nestedKeys.length > 0) {
+                                    const nestedError = firstError[nestedKeys[0]];
+                                    if (Array.isArray(nestedError)) {
+                                        errorMessage = nestedError[0];
+                                    } else if (typeof nestedError === 'string') {
+                                        errorMessage = nestedError;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                if (!errorMessage) {
+                    errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                }
+                
+                throw new Error(errorMessage);
             }
 
             return await response.json();
@@ -179,10 +246,18 @@ class ApiService {
     }
 
     async placeBid(bidId, amount) {
-        return await this.request(`/bids/${bidId}/place_bid/`, {
-            method: 'POST',
-            body: JSON.stringify({ amount }),
-        });
+        console.log(`API: Placing bid ${amount} POM on bid ${bidId}`)
+        try {
+            const result = await this.request(`/bids/${bidId}/place_bid/`, {
+                method: 'POST',
+                body: JSON.stringify({ amount }),
+            });
+            console.log('API: Bid placed successfully:', result)
+            return result
+        } catch (error) {
+            console.error('API: Bid placement failed:', error)
+            throw error
+        }
     }
 
     async completeBid(bidId) {

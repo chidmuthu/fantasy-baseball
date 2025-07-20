@@ -4,11 +4,12 @@ import api from '../services/api'
 import { formatDistanceToNow } from 'date-fns'
 
 function Bidding() {
-  const { team } = useAuth()
+  const { team, refreshTeam } = useAuth()
   const [activeBids, setActiveBids] = useState([])
   const [showNominateModal, setShowNominateModal] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [bidError, setBidError] = useState(null)
   const [nominationForm, setNominationForm] = useState({
     name: '',
     position: '',
@@ -21,10 +22,15 @@ function Bidding() {
 
   useEffect(() => {
     loadActiveBids()
-    // Refresh bids every 30 seconds
-    const interval = setInterval(loadActiveBids, 30000)
+    // Refresh bids and team data every 5 seconds
+    const interval = setInterval(async () => {
+      await Promise.all([
+        loadActiveBids(),
+        refreshTeam()
+      ])
+    }, 5000)
     return () => clearInterval(interval)
-  }, [])
+  }, [refreshTeam])
 
   const loadActiveBids = async () => {
     try {
@@ -41,6 +47,7 @@ function Bidding() {
   const handleNominate = async (e) => {
     e.preventDefault()
     try {
+      setBidError(null) // Clear any previous errors
       const prospectData = {
         name: nominationForm.name,
         position: nominationForm.position,
@@ -50,6 +57,7 @@ function Bidding() {
         eta: parseInt(nominationForm.eta)
       }
       
+      console.log('Creating bid with data:', { prospectData, startingBid: nominationForm.startingBid })
       await api.createBid(prospectData, nominationForm.startingBid)
       setShowNominateModal(false)
       setNominationForm({
@@ -61,18 +69,44 @@ function Bidding() {
         eta: new Date().getFullYear() + 2,
         startingBid: 5
       })
-      loadActiveBids() // Refresh the bids
+      
+      // Refresh both bids and team data
+      await Promise.all([
+        loadActiveBids(),
+        refreshTeam()
+      ])
     } catch (error) {
-      alert('Failed to nominate prospect: ' + error.message)
+      console.error('Nomination error:', error)
+      setBidError(error.message)
+      // Keep the error visible for 30 seconds
+      setTimeout(() => setBidError(null), 30000)
     }
   }
 
   const handleBid = async (bidId, amount) => {
     try {
-      await api.placeBid(bidId, amount)
-      loadActiveBids() // Refresh the bids
+      setBidError(null) // Clear any previous errors
+      console.log(`Attempting to place bid: ${amount} POM on bid ${bidId}`)
+      console.log(`Current team POM balance: ${team?.pom_balance}`)
+      
+      const result = await api.placeBid(bidId, amount)
+      console.log('Bid placed successfully:', result)
+      
+      // Refresh both bids and team data
+      await Promise.all([
+        loadActiveBids(),
+        refreshTeam()
+      ])
     } catch (error) {
-      alert('Failed to place bid: ' + error.message)
+      console.error('Bid error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      })
+      console.error('Full error object:', error)
+      setBidError(error.message)
+      // Keep the error visible for 30 seconds
+      setTimeout(() => setBidError(null), 30000)
     }
   }
 
@@ -116,10 +150,45 @@ function Bidding() {
   }
 
   return (
-    <div>
+    <div style={{ marginTop: bidError ? '60px' : '0' }}>
       <div className="card">
         <h2>Active Bidding</h2>
         <p>Bid on prospects and nominate new ones for your farm system.</p>
+        
+        {bidError && (
+          <div style={{ 
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            right: '0',
+            zIndex: 9999,
+            color: 'white', 
+            padding: '15px', 
+            backgroundColor: '#dc3545', 
+            borderBottom: '2px solid #c82333',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+          }}>
+            <div style={{ flex: 1 }}>
+              <strong>Bid Error:</strong> {bidError}
+            </div>
+            <button 
+              onClick={() => setBidError(null)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'white',
+                fontSize: '1.2rem',
+                cursor: 'pointer',
+                padding: '0 10px'
+              }}
+            >
+              ×
+            </button>
+          </div>
+        )}
         
         {team && (
           <div className="pom-display">
@@ -166,7 +235,6 @@ function Bidding() {
                     <input
                       type="number"
                       min={bid.current_bid + 1}
-                      max={team?.pom_balance}
                       placeholder={`Min bid: ${bid.current_bid + 1}`}
                       id={`bid-${bid.id}`}
                     />
@@ -175,9 +243,14 @@ function Bidding() {
                       onClick={() => {
                         const input = document.getElementById(`bid-${bid.id}`)
                         const amount = parseInt(input.value)
-                        if (amount > bid.current_bid && amount <= team.pom_balance) {
+                        if (amount > bid.current_bid) {
+                          console.log(`Frontend: Attempting to place bid ${amount} POM`)
                           handleBid(bid.id, amount)
                           input.value = ''
+                        } else {
+                          console.log(`Frontend: Bid amount ${amount} must be higher than current bid ${bid.current_bid}`)
+                          setBidError(`Bid must be higher than current bid of ${bid.current_bid} POM`)
+                          setTimeout(() => setBidError(null), 5000)
                         }
                       }}
                     >
