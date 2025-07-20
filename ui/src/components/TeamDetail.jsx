@@ -10,6 +10,8 @@ function TeamDetail() {
   const [prospects, setProspects] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [editingProspect, setEditingProspect] = useState(null)
+  const [editForm, setEditForm] = useState({})
 
   useEffect(() => {
     loadTeamData()
@@ -54,6 +56,51 @@ function TeamDetail() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const startEditing = (prospect) => {
+    setEditingProspect(prospect.id)
+    setEditForm({
+      position: prospect.position,
+      organization: prospect.organization,
+      level: prospect.level,
+      eta: prospect.eta
+    })
+  }
+
+  const cancelEditing = () => {
+    setEditingProspect(null)
+    setEditForm({})
+  }
+
+  const saveProspect = async (prospectId) => {
+    try {
+      // Only send the fields that are actually editable
+      const updateData = {
+        position: editForm.position,
+        organization: editForm.organization,
+        level: editForm.level,
+        eta: editForm.eta
+      }
+      
+      await api.updateProspect(prospectId, updateData)
+      
+      // Update the prospects list with the edited prospect, preserving original data
+      setProspects(prospects.map(p => 
+        p.id === prospectId 
+          ? { ...p, ...updateData }
+          : p
+      ))
+      
+      setEditingProspect(null)
+      setEditForm({})
+    } catch (error) {
+      alert('Failed to update prospect: ' + error.message)
+    }
+  }
+
+  const handleEditChange = (field, value) => {
+    setEditForm(prev => ({ ...prev, [field]: value }))
   }
 
   if (loading) {
@@ -135,28 +182,132 @@ function TeamDetail() {
           <div className="grid">
             {prospects.map(prospect => (
               <div key={prospect.id} className="card">
-                <h4>{prospect.name}</h4>
-                
-                <div className="prospect-info">
-                  <p><span>Position:</span> {prospect.position}</p>
-                  <p><span>Organization:</span> {prospect.organization}</p>
-                  <p><span>Level:</span> {prospect.level}</p>
-                  <p><span>ETA:</span> {prospect.eta}</p>
-                  <p><span>Age:</span> {prospect.age}</p>
-                </div>
+                {editingProspect === prospect.id ? (
+                  // Edit mode
+                  <div>
+                    <div className="form-group">
+                      <label>Name:</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={prospect.name}
+                        disabled
+                        style={{ backgroundColor: '#f8f9fa', color: '#666' }}
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Position:</label>
+                      <select
+                        className="form-control"
+                        value={editForm.position}
+                        onChange={(e) => handleEditChange('position', e.target.value)}
+                      >
+                        <option value="P">Pitcher</option>
+                        <option value="C">Catcher</option>
+                        <option value="1B">First Base</option>
+                        <option value="2B">Second Base</option>
+                        <option value="3B">Third Base</option>
+                        <option value="SS">Shortstop</option>
+                        <option value="OF">Outfield</option>
+                        <option value="UTIL">Utility</option>
+                      </select>
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Organization:</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={editForm.organization}
+                        onChange={(e) => handleEditChange('organization', e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Level:</label>
+                      <select
+                        className="form-control"
+                        value={editForm.level}
+                        onChange={(e) => handleEditChange('level', e.target.value)}
+                      >
+                        <option value="ROK">Rookie</option>
+                        <option value="A">A</option>
+                        <option value="A+">A+</option>
+                        <option value="AA">AA</option>
+                        <option value="AAA">AAA</option>
+                        <option value="MLB">MLB</option>
+                      </select>
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>ETA:</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        value={editForm.eta}
+                        onChange={(e) => handleEditChange('eta', parseInt(e.target.value))}
+                        min={new Date().getFullYear()}
+                        max={new Date().getFullYear() + 10}
+                      />
+                    </div>
+                    
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: '10px', 
+                      marginTop: '15px',
+                      justifyContent: 'flex-end'
+                    }}>
+                      <button 
+                        className="btn btn-secondary"
+                        onClick={cancelEditing}
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        className="btn btn-success"
+                        onClick={() => saveProspect(prospect.id)}
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  // View mode
+                  <div>
+                    <h4>{prospect.name}</h4>
+                    
+                    <div className="prospect-info">
+                      <p><span>Position:</span> {prospect.position}</p>
+                      <p><span>Organization:</span> {prospect.organization}</p>
+                      <p><span>Level:</span> {prospect.level}</p>
+                      <p><span>ETA:</span> {prospect.eta}</p>
+                      <p><span>Age:</span> {prospect.age}</p>
+                    </div>
 
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center', 
-                  marginTop: '15px',
-                  paddingTop: '15px',
-                  borderTop: '1px solid #eee'
-                }}>
-                  <span style={{ fontSize: '0.8rem', color: '#666' }}>
-                    Added: {new Date(prospect.acquired_at).toLocaleDateString()}
-                  </span>
-                </div>
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center', 
+                      marginTop: '15px',
+                      paddingTop: '15px',
+                      borderTop: '1px solid #eee'
+                    }}>
+                      <span style={{ fontSize: '0.8rem', color: '#666' }}>
+                        Added: {new Date(prospect.created_at).toLocaleDateString()}
+                      </span>
+                      {userTeam && userTeam.id === team.id && (
+                        <button 
+                          className="btn btn-secondary"
+                          style={{ fontSize: '0.8rem', padding: '5px 10px' }}
+                          onClick={() => startEditing(prospect)}
+                        >
+                          Edit
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

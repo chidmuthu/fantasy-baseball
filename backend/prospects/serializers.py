@@ -65,7 +65,7 @@ class ProspectCreateSerializer(serializers.ModelSerializer):
 class ProspectUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Prospect
-        fields = ['name', 'position', 'organization', 'level', 'eta']
+        fields = ['position', 'organization', 'level', 'eta']
     
     def validate(self, data):
         # Only allow updates if user owns the prospect or is admin

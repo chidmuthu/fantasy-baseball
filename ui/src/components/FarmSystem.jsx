@@ -70,21 +70,18 @@ function FarmSystem() {
                 <p style={{ color: '#666', fontStyle: 'italic' }}>No prospects yet</p>
               ) : (
                 <div className="prospect-list">
-                  {team.prospects.slice(0, 3).map(prospect => (
-                    <div key={prospect.id} className="prospect-item">
-                      <h4>{prospect.name}</h4>
-                      <p><span>Position:</span> {prospect.position}</p>
-                      <p><span>Organization:</span> {prospect.organization}</p>
-                      <p><span>Level:</span> {prospect.level}</p>
-                      <p><span>ETA:</span> {prospect.eta}</p>
-                      <p><span>Age:</span> {prospect.age}</p>
+                  {team.prospects.map(prospect => (
+                    <div key={prospect.id} style={{ 
+                      padding: '6px 12px', 
+                      margin: '1px 0', 
+                      backgroundColor: '#f8f9fa', 
+                      borderRadius: '2px',
+                      fontSize: '0.9rem',
+                      borderLeft: '3px solid #667eea'
+                    }}>
+                      <strong>{prospect.name}</strong> - {prospect.position}
                     </div>
                   ))}
-                  {team.prospects.length > 3 && (
-                    <p style={{ color: '#666', fontStyle: 'italic', textAlign: 'center' }}>
-                      +{team.prospects.length - 3} more prospects
-                    </p>
-                  )}
                 </div>
               )}
               
