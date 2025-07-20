@@ -60,14 +60,14 @@ class Command(BaseCommand):
 
         # Create test prospects
         prospect_data = [
-            {'name': 'Jackson Holliday', 'position': 'SS', 'organization': 'Baltimore Orioles', 'age': 20},
-            {'name': 'Junior Caminero', 'position': '3B', 'organization': 'Tampa Bay Rays', 'age': 20},
-            {'name': 'Wyatt Flores', 'position': 'P', 'organization': 'Milwaukee Brewers', 'age': 19},
-            {'name': 'Ethan Salas', 'position': 'C', 'organization': 'San Diego Padres', 'age': 17},
-            {'name': 'Jackson Chourio', 'position': 'OF', 'organization': 'Milwaukee Brewers', 'age': 19},
-            {'name': 'Paul Skenes', 'position': 'P', 'organization': 'Pittsburgh Pirates', 'age': 21},
-            {'name': 'Dylan Crews', 'position': 'OF', 'organization': 'Washington Nationals', 'age': 21},
-            {'name': 'Roki Sasaki', 'position': 'P', 'organization': 'Los Angeles Dodgers', 'age': 23},
+            {'name': 'Jackson Holliday', 'position': 'SS', 'organization': 'Baltimore Orioles', 'date_of_birth': '2003-01-01'},
+            {'name': 'Junior Caminero', 'position': '3B', 'organization': 'Tampa Bay Rays', 'date_of_birth': '2003-03-02'},
+            {'name': 'Wyatt Flores', 'position': 'P', 'organization': 'Milwaukee Brewers', 'date_of_birth': '2004-05-03'},
+            {'name': 'Ethan Salas', 'position': 'C', 'organization': 'San Diego Padres', 'date_of_birth': '2006-07-04'},
+            {'name': 'Jackson Chourio', 'position': 'OF', 'organization': 'Milwaukee Brewers', 'date_of_birth': '2004-09-05'},
+            {'name': 'Paul Skenes', 'position': 'P', 'organization': 'Pittsburgh Pirates', 'date_of_birth': '2002-11-06'},
+            {'name': 'Dylan Crews', 'position': 'OF', 'organization': 'Washington Nationals', 'date_of_birth': '2002-12-07'},
+            {'name': 'Roki Sasaki', 'position': 'P', 'organization': 'Los Angeles Dodgers', 'date_of_birth': '2001-02-08'},
         ]
 
         prospects = []

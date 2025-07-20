@@ -2,3 +2,4 @@ backend/venv/
 backend/db.sqlite3
 ui/node_modules/
 __pycache__/
+celerybeat-schedule

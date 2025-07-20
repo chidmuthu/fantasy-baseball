@@ -7,15 +7,16 @@ class ProspectSerializer(serializers.ModelSerializer):
     created_by = serializers.SerializerMethodField()
     is_available = serializers.ReadOnlyField()
     current_bid = serializers.SerializerMethodField()
+    age = serializers.ReadOnlyField()  # Add age as a read-only field
     
     class Meta:
         model = Prospect
         fields = [
-            'id', 'name', 'position', 'organization', 'age', 'notes',
+            'id', 'name', 'position', 'organization', 'date_of_birth', 'age', 'notes',
             'team', 'acquired_at', 'created_by', 'created_at', 'updated_at',
             'is_available', 'current_bid'
         ]
-        read_only_fields = ['acquired_at', 'created_at', 'updated_at']
+        read_only_fields = ['acquired_at', 'created_at', 'updated_at', 'age']
     
     def get_team(self, obj):
         if obj.team:
@@ -53,7 +54,8 @@ class ProspectSerializer(serializers.ModelSerializer):
 class ProspectCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Prospect
-        fields = ['name', 'position', 'organization', 'age', 'notes']
+        fields = ['name', 'position', 'organization', 'date_of_birth', 'notes']
+    
     
     def create(self, validated_data):
         validated_data['created_by'] = self.context['request'].user.team
@@ -63,7 +65,7 @@ class ProspectCreateSerializer(serializers.ModelSerializer):
 class ProspectUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Prospect
-        fields = ['name', 'position', 'organization', 'age', 'notes']
+        fields = ['name', 'position', 'organization', 'notes']
     
     def validate(self, data):
         # Only allow updates if user owns the prospect or is admin

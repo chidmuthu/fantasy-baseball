@@ -7,6 +7,7 @@ import os
 import sys
 import subprocess
 import argparse
+import shutil
 from pathlib import Path
 
 def run_command(command, description):
@@ -45,6 +46,14 @@ def clean_project():
         print("ℹ️  No migration files found to remove")
     else:
         print(f"✓ Removed {migration_files_removed} migration files")
+    
+    # Remove venv 
+    venv_path = Path("venv")
+    if venv_path.exists():
+        shutil.rmtree(venv_path)
+        print("✓ Removed venv")
+    else:
+        print("ℹ️  No venv found")
     
     print("🧹 Clean completed!")
 
