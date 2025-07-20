@@ -23,6 +23,7 @@ class Bid(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     last_bid_time = models.DateTimeField(auto_now=True)
     completed_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
         ordering = ['-created_at']
@@ -31,6 +32,7 @@ class Bid(models.Model):
             models.Index(fields=['prospect']),
             models.Index(fields=['current_bidder']),
             models.Index(fields=['last_bid_time']),
+            models.Index(fields=['expires_at']),
         ]
     
     def __str__(self):
@@ -39,23 +41,26 @@ class Bid(models.Model):
     @property
     def time_remaining(self):
         """Calculate time remaining until bid completion"""
-        if self.status != 'active':
+        if self.status != 'active' or not self.expires_at:
             return None
         
-        from django.conf import settings
-        expiration_hours = getattr(settings, 'BID_EXPIRATION_HOURS', 24)
+        time_remaining = (self.expires_at - timezone.now()).total_seconds() / 60
         
-        time_since_last_bid = timezone.now() - self.last_bid_time
-        hours_remaining = expiration_hours - (time_since_last_bid.total_seconds() / 3600)
-        
-        if hours_remaining <= 0:
+        if time_remaining <= 0:
             return 0
-        return hours_remaining
+        return time_remaining
     
     @property
     def is_expired(self):
         """Check if bid has expired"""
-        return self.time_remaining is not None and self.time_remaining <= 0
+        return self.expires_at and timezone.now() >= self.expires_at
+    
+    def update_expiration_time(self):
+        """Update the expiration time based on current settings"""
+        from django.conf import settings
+        expiration_minutes = getattr(settings, 'BID_EXPIRATION_MINUTES', 1440)
+        self.expires_at = timezone.now() + timezone.timedelta(minutes=expiration_minutes)
+        self.save(update_fields=['expires_at'])
     
     def place_bid(self, team, amount):
         """Place a new bid on this auction"""
@@ -79,7 +84,19 @@ class Bid(models.Model):
         self.current_bid = amount
         self.current_bidder = team
         self.last_bid_time = timezone.now()
+        
+        # Save the changes to the database
         self.save()
+        
+        # Update expiration time (extends the bid when someone bids)
+        self.update_expiration_time()
+        
+        # Trigger real-time notification
+        try:
+            from .tasks import notify_new_bid
+            notify_new_bid.delay(self.id)
+        except Exception as e:
+            print(f"Warning: Could not send bid notification: {e}")
         
         return True
     

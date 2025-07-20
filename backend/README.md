@@ -153,18 +153,6 @@ The Django admin interface provides comprehensive management capabilities:
 - Manually complete or cancel bids
 - View bid history
 - Bulk actions for bid management
-
-## Background Tasks
-
-### Expired Bid Checking
-Run the management command to check and complete expired bids:
-
-```bash
-python manage.py check_expired_bids
-```
-
-For production, set up a cron job or Celery beat schedule to run this regularly.
-
 ## Development
 
 ### Running Tests

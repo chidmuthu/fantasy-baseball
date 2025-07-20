@@ -6,6 +6,7 @@ Setup script for the Dynasty Baseball Farm System Django backend.
 import os
 import sys
 import subprocess
+import argparse
 from pathlib import Path
 
 def run_command(command, description):
@@ -20,8 +21,39 @@ def run_command(command, description):
         print(f"  Error: {e.stderr}")
         return False
 
+def clean_project():
+    """Clean the project by removing database and migrations"""
+    print("🧹 Cleaning project...")
+    
+    # Remove database
+    db_file = Path("db.sqlite3")
+    if db_file.exists():
+        db_file.unlink()
+        print("✓ Removed db.sqlite3")
+    else:
+        print("ℹ️  No db.sqlite3 found")
+    
+    # Remove migration files (except __init__.py)
+    migration_files_removed = 0
+    for migration_file in Path(".").rglob("*/migrations/*.py"):
+        if migration_file.name != "__init__.py":
+            migration_file.unlink()
+            migration_files_removed += 1
+            print(f"✓ Removed {migration_file}")
+    
+    if migration_files_removed == 0:
+        print("ℹ️  No migration files found to remove")
+    else:
+        print(f"✓ Removed {migration_files_removed} migration files")
+    
+    print("🧹 Clean completed!")
+
 def main():
     """Main setup function"""
+    parser = argparse.ArgumentParser(description="Setup script for Dynasty Baseball Farm System Backend")
+    parser.add_argument("--clean", action="store_true", help="Clean the project before setup (removes db.sqlite3 and migrations)")
+    args = parser.parse_args()
+    
     print("Setting up Dynasty Baseball Farm System Backend")
     print("=" * 50)
     
@@ -29,6 +61,11 @@ def main():
     if not Path("manage.py").exists():
         print("Error: Please run this script from the backend directory")
         sys.exit(1)
+    
+    # Clean if requested
+    if args.clean:
+        clean_project()
+        print()
     
     # Create virtual environment if it doesn't exist
     venv_path = Path("venv")
@@ -56,19 +93,18 @@ def main():
     if not run_command(f"{python_path} manage.py migrate", "Apply migrations"):
         sys.exit(1)
     
-    # Create superuser
-    # print("\nCreating superuser account...")
-    # print("Please enter the following information for the admin account:")
-    # try:
-    #     subprocess.run(f"{python_path} manage.py createsuperuser", shell=True, check=True)
-    #     print("✓ Superuser created successfully")
-    # except subprocess.CalledProcessError:
-    #     print("✗ Superuser creation failed or was cancelled")
+    if not run_command(f"{python_path} manage.py create_test_data", "Create test data"):
+        sys.exit(1)
     
-    # Create some sample data
-    print("\nCreating sample data...")
-    if not run_command(f"{python_path} manage.py shell -c \"from django.contrib.auth.models import User; from teams.models import Team; print('Sample data created')\"", "Create sample data"):
-        print("Note: Sample data creation failed, but this is not critical")
+    # Create superuser
+    if args.clean:
+        print("\nCreating superuser account...")
+        print("Please enter the following information for the admin account:")
+        try:
+            subprocess.run(f"{python_path} manage.py createsuperuser", shell=True, check=True)
+            print("✓ Superuser created successfully")
+        except subprocess.CalledProcessError:
+            print("✗ Superuser creation failed or was cancelled")
     
     print("\n" + "=" * 50)
     print("Setup completed successfully!")

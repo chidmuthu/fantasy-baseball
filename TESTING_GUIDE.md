@@ -12,11 +12,8 @@ python3 setup.py
 
 ### 2. Create Test Data with Fast Bidding
 ```bash
-# Create test data with 5-minute bid expiration
-python manage.py create_test_data --fast-bids
-
 # Or create test data with normal 24-hour expiration
-python manage.py create_test_data
+python manage.py create_test_data --clear
 ```
 
 ### 3. Start the Backend Server
@@ -92,7 +89,7 @@ With fast bidding (5-minute expiration):
 ### Accelerated Bidding for Development
 To test bid expiration quickly, set the environment variable:
 ```bash
-export BID_EXPIRATION_HOURS=0.083  # 5 minutes
+export BID_EXPIRATION_MINUTES=5  # 5 minutes
 python manage.py runserver
 ```
 
@@ -101,18 +98,6 @@ python manage.py runserver
 2. Login with different accounts
 3. Watch for real-time updates when bids are placed
 4. Test WebSocket connections
-
-### Database Reset
-To start fresh:
-```bash
-python manage.py create_test_data --clear --fast-bids
-```
-
-### Manual Bid Completion
-For testing bid completion without waiting:
-```bash
-python manage.py check_expired_bids
-```
 
 ## 🐛 Common Issues and Solutions
 

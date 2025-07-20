@@ -13,7 +13,13 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        expired_bids = Bid.objects.filter(status='active', is_expired=True)
+        from django.utils import timezone
+        
+        # Find bids that have expired (expires_at is in the past)
+        expired_bids = Bid.objects.filter(
+            status='active',
+            expires_at__lt=timezone.now()
+        )
         
         if not expired_bids.exists():
             self.stdout.write(

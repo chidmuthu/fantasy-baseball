@@ -27,9 +27,9 @@ class BidSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'prospect', 'nominator', 'current_bidder', 'starting_bid', 
             'current_bid', 'status', 'created_at', 'last_bid_time', 'completed_at',
-            'time_remaining', 'is_expired', 'history'
+            'expires_at', 'time_remaining', 'is_expired', 'history'
         ]
-        read_only_fields = ['created_at', 'last_bid_time', 'completed_at']
+        read_only_fields = ['created_at', 'last_bid_time', 'completed_at', 'expires_at']
     
     def get_prospect(self, obj):
         from prospects.serializers import ProspectSerializer
@@ -82,6 +82,9 @@ class BidCreateSerializer(serializers.ModelSerializer):
             starting_bid=validated_data['starting_bid'],
             current_bid=validated_data['starting_bid']
         )
+        
+        # Set initial expiration time
+        bid.update_expiration_time()
         
         return bid
 

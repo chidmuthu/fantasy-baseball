@@ -139,6 +139,11 @@ CORS_ALLOW_CREDENTIALS = True
 # Channels settings
 CHANNEL_LAYERS = {
     'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    } if not DEBUG else {
         'BACKEND': 'channels.layers.InMemoryChannelLayer',
     }
 }
@@ -150,9 +155,9 @@ CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localho
 # Development settings for testing
 if DEBUG:
     # Fast bidding for development (5 minutes instead of 24 hours)
-    BID_EXPIRATION_HOURS = config('BID_EXPIRATION_HOURS', default=24, cast=int)
-    if BID_EXPIRATION_HOURS != 24:
-        print(f"⚠️  Development mode: Bids expire in {BID_EXPIRATION_HOURS} hours instead of 24 hours")
+    BID_EXPIRATION_MINUTES = config('BID_EXPIRATION_MINUTES', default=1440, cast=int)
+    if BID_EXPIRATION_MINUTES != 1440:
+        print(f"⚠️  Development mode: Bids expire in {BID_EXPIRATION_MINUTES / 60} hours instead of 24 hours")
 
 # Logging
 LOGGING = {

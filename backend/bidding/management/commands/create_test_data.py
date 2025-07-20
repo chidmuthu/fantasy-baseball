@@ -16,11 +16,6 @@ class Command(BaseCommand):
             action='store_true',
             help='Clear existing test data before creating new data',
         )
-        parser.add_argument(
-            '--fast-bids',
-            action='store_true',
-            help='Create bids with 5-minute expiration for testing',
-        )
 
     def handle(self, *args, **options):
         if options['clear']:
@@ -85,15 +80,6 @@ class Command(BaseCommand):
             prospects.append(prospect)
             self.stdout.write(f'Created prospect: {prospect.name}')
 
-        # Create some active bids
-        if options['fast_bids']:
-            # Create bids with 5-minute expiration for testing
-            bid_duration = timedelta(minutes=5)
-            self.stdout.write('Creating test bids with 5-minute expiration...')
-        else:
-            bid_duration = timedelta(hours=24)
-            self.stdout.write('Creating test bids with 24-hour expiration...')
-
         # Create bids with different starting times
         bid_start_times = [
             timezone.now() - timedelta(minutes=2),  # Recently started
@@ -112,7 +98,8 @@ class Command(BaseCommand):
                 current_bidder=nominator,
                 starting_bid=starting_bid,
                 current_bid=starting_bid,
-                status='active'
+                status='active',
+                expires_at=timezone.now() + timedelta(minutes=5)
             )
             
             # Manually set the timestamps for testing
@@ -165,6 +152,5 @@ class Command(BaseCommand):
                 f'Username: test_user_4, Password: testpass123\n'
                 f'Username: test_user_5, Password: testpass123\n\n'
                 f'Admin account: Use your superuser credentials\n\n'
-                f'For fast testing, run: python manage.py create_test_data --fast-bids'
             )
         ) 

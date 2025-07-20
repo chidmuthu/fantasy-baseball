@@ -73,16 +73,22 @@ function Bidding() {
     }
   }
 
-  const getTimeRemaining = (lastBidTime) => {
+  const getTimeRemaining = (expiresAt) => {
+    if (!expiresAt) return 'No expiration set'
+    
     const now = new Date()
-    const lastBid = new Date(lastBidTime)
-    const hoursSinceLastBid = (now - lastBid) / (1000 * 60 * 60)
-    const hoursRemaining = Math.max(0, 24 - hoursSinceLastBid)
+    const expiration = new Date(expiresAt)
+    const timeRemaining = expiration - now
     
-    if (hoursRemaining === 0) return 'Ending soon...'
+    if (timeRemaining <= 0) return 'Ending soon...'
     
-    const hours = Math.floor(hoursRemaining)
-    const minutes = Math.floor((hoursRemaining - hours) * 60)
+    const hours = Math.floor(timeRemaining / (1000 * 60 * 60))
+    const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60))
+    
+    if (hours === 0) {
+      return `${minutes}m remaining`
+    }
+    
     return `${hours}h ${minutes}m remaining`
   }
 
@@ -150,7 +156,7 @@ function Bidding() {
                 <p><strong>Current Leader:</strong> {currentBidder?.name}</p>
                 <p><strong>Started:</strong> {formatDistanceToNow(new Date(bid.created_at), { addSuffix: true })}</p>
                 <div className="timer">
-                  <strong>Time Remaining:</strong> {getTimeRemaining(bid.last_bid_time)}
+                  <strong>Time Remaining:</strong> {getTimeRemaining(bid.expires_at)}
                 </div>
                 
                 {canBid && (

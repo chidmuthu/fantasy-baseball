@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status, permissions
+from rest_framework import viewsets, status, permissions, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
@@ -12,44 +12,18 @@ from .serializers import (
 )
 
 
-class IsBidParticipantOrAdmin(permissions.BasePermission):
-    """Custom permission to allow bid participants or admins to view bids"""
-    
-    def has_object_permission(self, request, view, obj):
-        # Admin users can do anything
-        if request.user.is_staff:
-            return True
-        
-        # Team owners can view bids they're participating in
-        return obj.nominator == request.user.team or obj.current_bidder == request.user.team
-
-
 class BidViewSet(viewsets.ModelViewSet):
     queryset = Bid.objects.all()
     serializer_class = BidSerializer
-    permission_classes = [IsBidParticipantOrAdmin]
+    permission_classes = [permissions.IsAuthenticated]  # Simple: just require login
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['status', 'prospect', 'current_bidder']
     
     def get_queryset(self):
-        """Filter queryset based on user permissions"""
-        queryset = Bid.objects.select_related(
+        """All authenticated users can see all bids"""
+        return Bid.objects.select_related(
             'prospect', 'nominator', 'current_bidder'
         ).prefetch_related('history__team')
-        
-        # Admins can see all bids
-        if self.request.user.is_staff:
-            return queryset
-        
-        # Regular users can see:
-        # 1. Bids they nominated
-        # 2. Bids they're currently winning
-        # 3. All active bids (for bidding)
-        return queryset.filter(
-            models.Q(nominator=self.request.user.team) |
-            models.Q(current_bidder=self.request.user.team) |
-            models.Q(status='active')
-        )
     
     def get_serializer_class(self):
         if self.action == 'create':
@@ -150,7 +124,11 @@ class BidViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        expired_bids = Bid.objects.filter(status='active', is_expired=True)
+        # Find bids that have expired (expires_at is in the past)
+        expired_bids = Bid.objects.filter(
+            status='active',
+            expires_at__lt=timezone.now()
+        )
         completed_count = 0
         
         for bid in expired_bids:

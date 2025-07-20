@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils import timezone
 from teams.models import Team
 
 
@@ -24,7 +25,7 @@ class Prospect(models.Model):
     
     # Farm system
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True, related_name='prospects')
-    acquired_at = models.DateTimeField(auto_now_add=True)
+    acquired_at = models.DateTimeField(null=True, blank=True)
     
     # Metadata
     created_by = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='created_prospects')
@@ -56,5 +57,5 @@ class Prospect(models.Model):
     def transfer_to_team(self, new_team):
         """Transfer prospect to a new team"""
         self.team = new_team
-        self.acquired_at = models.timezone.now()
+        self.acquired_at = timezone.now()
         self.save() 
