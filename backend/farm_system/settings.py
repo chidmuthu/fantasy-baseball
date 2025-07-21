@@ -157,7 +157,9 @@ if DEBUG:
     # Fast bidding for development (5 minutes instead of 24 hours)
     BID_EXPIRATION_MINUTES = config('BID_EXPIRATION_MINUTES', default=1440, cast=int)
     if BID_EXPIRATION_MINUTES != 1440:
-        print(f"⚠️  Development mode: Bids expire in {BID_EXPIRATION_MINUTES / 60} hours instead of 24 hours")
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"⚠️  Development mode: Bids expire in {BID_EXPIRATION_MINUTES / 60} hours instead of 24 hours")
 
 # Logging
 LOGGING = {

@@ -3,7 +3,10 @@ from django.utils import timezone
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import json
+import logging
 from .models import Bid
+
+logger = logging.getLogger(__name__)
 
 
 @shared_task
@@ -17,9 +20,9 @@ def check_expired_bids():
         expires_at__lt=timezone.now()
     )
     
-    print(f"🔍 Checking for expired bids...")
-    print(f"   Current time: {timezone.now()}")
-    print(f"   Found {expired_bids.count()} expired bids")
+    logger.info(f"🔍 Checking for expired bids...")
+    logger.info(f"   Current time: {timezone.now()}")
+    logger.info(f"   Found {expired_bids.count()} expired bids")
     
     completed_count = 0
     for bid in expired_bids:
@@ -30,14 +33,14 @@ def check_expired_bids():
                 # Send real-time notification to all connected clients
                 notify_bid_completed.delay(bid.id)
                 
-                print(f"✅ Automatically completed bid for {bid.prospect.name} - {bid.current_bidder.name} wins for {bid.current_bid} POM")
+                logger.info(f"✅ Automatically completed bid for {bid.prospect.name} - {bid.current_bidder.name} wins for {bid.current_bid} POM")
             else:
-                print(f"❌ Failed to complete bid for {bid.prospect.name}")
+                logger.error(f"❌ Failed to complete bid for {bid.prospect.name}")
         except Exception as e:
-            print(f"❌ Error completing bid for {bid.prospect.name}: {str(e)}")
+            logger.error(f"❌ Error completing bid for {bid.prospect.name}: {str(e)}")
     
     if completed_count > 0:
-        print(f"🎉 Successfully completed {completed_count} expired bids")
+        logger.info(f"🎉 Successfully completed {completed_count} expired bids")
     
     return completed_count
 
@@ -101,12 +104,12 @@ def notify_bid_completed(bid_id):
             }
         )
         
-        print(f"📢 Sent WebSocket notifications for completed bid: {bid.prospect.name}")
+        logger.info(f"📢 Sent WebSocket notifications for completed bid: {bid.prospect.name}")
         
     except Bid.DoesNotExist:
-        print(f"❌ Bid {bid_id} not found for notification")
+        logger.error(f"❌ Bid {bid_id} not found for notification")
     except Exception as e:
-        print(f"❌ Error sending bid completion notification: {str(e)}")
+        logger.error(f"❌ Error sending bid completion notification: {str(e)}")
 
 
 @shared_task
@@ -150,12 +153,12 @@ def notify_bid_created(bid_id):
             }
         )
         
-        print(f"📢 Sent WebSocket notifications for new nomination: {bid.prospect.name}")
+        logger.info(f"📢 Sent WebSocket notifications for new nomination: {bid.prospect.name}")
         
     except Bid.DoesNotExist:
-        print(f"❌ Bid {bid_id} not found for notification")
+        logger.error(f"❌ Bid {bid_id} not found for notification")
     except Exception as e:
-        print(f"❌ Error sending new bid notification: {str(e)}")
+        logger.error(f"❌ Error sending new bid notification: {str(e)}")
 
 
 @shared_task
@@ -207,12 +210,12 @@ def notify_new_bid(bid_id):
             }
         )
         
-        print(f"📢 Sent WebSocket notifications for new bid: {bid.prospect.name}")
+        logger.info(f"📢 Sent WebSocket notifications for new bid: {bid.prospect.name}")
         
     except Bid.DoesNotExist:
-        print(f"❌ Bid {bid_id} not found for notification")
+        logger.error(f"❌ Bid {bid_id} not found for notification")
     except Exception as e:
-        print(f"❌ Error sending new bid notification: {str(e)}")
+        logger.error(f"❌ Error sending new bid notification: {str(e)}")
 
 
 # @shared_task

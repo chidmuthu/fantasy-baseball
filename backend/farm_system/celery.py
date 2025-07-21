@@ -1,6 +1,9 @@
 import os
 from celery import Celery
 from celery.schedules import crontab
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'farm_system.settings')
@@ -28,4 +31,4 @@ app.conf.beat_schedule = {
 
 @app.task(bind=True)
 def debug_task(self):
-    print(f'Request: {self.request!r}') 
+    logger.info(f'Request: {self.request!r}')
