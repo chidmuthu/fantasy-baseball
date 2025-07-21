@@ -21,13 +21,18 @@ def update_prospect_stats():
     error_count = 0
     
     baseball_service = get_baseball_data_service()
+    players = baseball_service.load_chadwick_data()
     
     for prospect in prospects:
         try:
             # Get current MLB stats
+            logger.info(f"Updating stats for {prospect.name}")
             is_pitcher = prospect.position == 'P'
-            count = baseball_service.get_mlb_appearances(prospect.name, pitching=is_pitcher)
-            
+            count = baseball_service.get_mlb_appearances(prospect.name, players, pitching=is_pitcher)
+            if count is None:
+                logger.warning(f"No stats found for {prospect.name}, minor league only player?")
+                continue
+            logger.info(f"Found {count} AB or IP for {prospect.name}")
             # Check if stats have changed\
             if is_pitcher:
                 prospect.innings_pitched = count
@@ -48,40 +53,3 @@ def update_prospect_stats():
         'error_count': error_count,
         'total_prospects': prospects.count()
     }
-
-
-@shared_task
-def update_single_prospect_stats(prospect_id):
-    """
-    Update stats for a single prospect (useful for manual updates)
-    """
-    try:
-        prospect = Prospect.objects.get(id=prospect_id)
-        baseball_service = get_baseball_data_service()
-        is_pitcher = prospect.position == 'P'
-        
-        count = baseball_service.get_mlb_appearances(prospect.name, pitching=is_pitcher)
-        
-        # Update the prospect
-        if is_pitcher:
-            prospect.innings_pitched = count
-        else:
-            prospect.at_bats = count
-        prospect.save()
-        
-        logger.info(f"Updated {prospect.name}: {prospect.at_bats} AB, {prospect.innings_pitched} IP")
-        
-        return {
-            'prospect_id': prospect_id,
-            'prospect_name': prospect.name,
-            'at_bats': prospect.at_bats,
-            'innings_pitched': prospect.innings_pitched,
-            'is_eligible': prospect.is_eligible
-        }
-        
-    except Prospect.DoesNotExist:
-        logger.error(f"Prospect with ID {prospect_id} not found")
-        return None
-    except Exception as e:
-        logger.error(f"Error updating prospect {prospect_id}: {e}")
-        return None

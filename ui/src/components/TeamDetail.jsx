@@ -121,19 +121,7 @@ function TeamDetail() {
     }
   }
 
-  const updateProspectStats = async (prospectId) => {
-    try {
-      const response = await api.updateProspectStats(prospectId)
-      
-      // Show success message
-      alert(response.message)
-      
-      // Refresh the prospects list
-      await loadTeamData()
-    } catch (error) {
-      alert('Failed to update prospect stats: ' + error.message)
-    }
-  }
+
 
   if (loading) {
     return (
@@ -404,17 +392,7 @@ function TeamDetail() {
                               Tag ({prospect.next_tag_cost} POM)
                             </button>
                           )}
-                          <button 
-                            className="btn btn-info"
-                            style={{ fontSize: '0.8rem', padding: '5px 10px' }}
-                            onClick={() => {
-                              if (window.confirm('Update this prospect\'s MLB stats from Baseball Reference?')) {
-                                updateProspectStats(prospect.id)
-                              }
-                            }}
-                          >
-                            Update Stats
-                          </button>
+
                         </div>
                       )}
                     </div>

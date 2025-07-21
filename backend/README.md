@@ -85,7 +85,7 @@ A Django-based backend API for managing dynasty fantasy baseball league farm sys
 - `POST /api/prospects/{id}/transfer/` - Transfer prospect (admin only)
 - `POST /api/prospects/{id}/release/` - Release prospect from team
 - `POST /api/prospects/{id}/tag/` - Tag prospect to extend eligibility
-- `POST /api/prospects/{id}/update_stats/` - Update prospect MLB stats from external sources
+- `POST /api/prospects/update_stats/` - Update prospect MLB stats from external sources
 
 ### Bidding
 - `GET /api/bids/` - List bids (filtered by permissions)

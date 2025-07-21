@@ -8,6 +8,8 @@ function FarmSystem() {
   const [teams, setTeams] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [updatingStats, setUpdatingStats] = useState(false)
+  const [statsUpdateMessage, setStatsUpdateMessage] = useState(null)
 
   useEffect(() => {
     loadTeams()
@@ -23,6 +25,25 @@ function FarmSystem() {
       setError('Failed to load teams: ' + error.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const updateAllStats = async () => {
+    try {
+      setUpdatingStats(true)
+      setStatsUpdateMessage(null)
+      
+      const response = await api.updateAllProspectStats()
+      setStatsUpdateMessage(`Stats update started! Updating ${response.total_prospects} prospects.`)
+      
+      // Clear the message after 5 seconds
+      setTimeout(() => setStatsUpdateMessage(null), 5000)
+      
+    } catch (error) {
+      setStatsUpdateMessage(`Error: ${error.message}`)
+      setTimeout(() => setStatsUpdateMessage(null), 5000)
+    } finally {
+      setUpdatingStats(false)
     }
   }
 
@@ -48,8 +69,38 @@ function FarmSystem() {
 
   return (
     <div>
-      <h2>Farm System Overview</h2>
-      <p>View all teams and their prospects in the dynasty league.</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div>
+          <h2>Farm System Overview</h2>
+          <p>View all teams and their prospects in the dynasty league.</p>
+        </div>
+        <button 
+          onClick={updateAllStats}
+          disabled={updatingStats}
+          className="btn btn-primary"
+          style={{ 
+            padding: '10px 20px',
+            fontSize: '0.9rem',
+            backgroundColor: updatingStats ? '#ccc' : '#007bff',
+            cursor: updatingStats ? 'not-allowed' : 'pointer'
+          }}
+        >
+          {updatingStats ? 'Updating...' : 'Update All Stats'}
+        </button>
+      </div>
+      
+      {statsUpdateMessage && (
+        <div style={{ 
+          padding: '10px', 
+          marginBottom: '20px',
+          borderRadius: '5px',
+          backgroundColor: statsUpdateMessage.includes('Error') ? '#fee' : '#e8f5e8',
+          color: statsUpdateMessage.includes('Error') ? '#c62828' : '#2e7d32',
+          border: `1px solid ${statsUpdateMessage.includes('Error') ? '#f44336' : '#4caf50'}`
+        }}>
+          {statsUpdateMessage}
+        </div>
+      )}
       
       <div className="grid">
         {teams.map(team => (

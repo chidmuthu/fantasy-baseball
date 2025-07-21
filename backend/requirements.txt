@@ -9,7 +9,4 @@ python-decouple==3.8
 celery==5.3.4
 redis==5.0.1
 setuptools==80.9.0
-pandas
-requests
-beautifulsoup4
-lxml
+pybaseball==2.2.7

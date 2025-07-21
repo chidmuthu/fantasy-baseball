@@ -224,8 +224,8 @@ class ApiService {
         });
     }
 
-    async updateProspectStats(prospectId) {
-        return await this.request(`/prospects/${prospectId}/update_stats/`, {
+    async updateAllProspectStats() {
+        return await this.request('/prospects/update_all_stats/', {
             method: 'POST',
         });
     }

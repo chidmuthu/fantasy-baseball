@@ -48,8 +48,10 @@ class Command(BaseCommand):
                 self.stdout.write(f"With birth date: {birth_year}-{birth_month or '??'}-{birth_day or '??'}")
             
             # Use the search_player method directly to test the full pipeline
+            players = baseball_service.load_chadwick_data()
             player_data = baseball_service.search_player(
                 player_name, 
+                players,
                 birth_year=birth_year,
                 birth_month=birth_month,
                 birth_day=birth_day,
@@ -87,8 +89,10 @@ class Command(BaseCommand):
                         birth_month = None
                         birth_day = None
                     
+                    players = baseball_service.load_chadwick_data()
                     player_data = baseball_service.search_player(
                         sample_prospect.name,
+                        players,
                         birth_year=birth_year,
                         birth_month=birth_month,
                         birth_day=birth_day,

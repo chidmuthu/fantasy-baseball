@@ -11,7 +11,10 @@ from .serializers import (
     ProspectTagSerializer
 )
 from django.db import models
-from .tasks import update_single_prospect_stats
+from .tasks import update_prospect_stats
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class IsProspectOwnerOrAdmin(permissions.BasePermission):
@@ -75,26 +78,19 @@ class ProspectViewSet(viewsets.ModelViewSet):
             return Response(ProspectSerializer(prospect).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    @action(detail=True, methods=['post'])
-    def update_stats(self, request, pk=None):
-        """Update prospect MLB stats from external sources"""
-        prospect = self.get_object()
-        
-        # Only team owner or admin can update stats
-        if not request.user.is_staff and prospect.team != request.user.team:
-            return Response(
-                {'error': 'You can only update stats for prospects on your team'}, 
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
+    @action(detail=False, methods=['post'])
+    def update_all_stats(self, request):
+        """Update MLB stats for all prospects from external sources"""
         try:
-            # Trigger the background task
-            task = update_single_prospect_stats.delay(prospect.id)
+            # Trigger the background task for all prospects
+            task = update_prospect_stats.delay()
+
+            logger.info(f"Stats update started for all prospects")
             
             return Response({
-                'message': f'Stats update started for {prospect.name}',
+                'message': 'Stats update started for all prospects',
                 'task_id': task.id,
-                'prospect': ProspectSerializer(prospect).data
+                'total_prospects': Prospect.objects.count()
             })
             
         except Exception as e:

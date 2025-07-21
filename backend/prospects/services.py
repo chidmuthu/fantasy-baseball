@@ -28,7 +28,7 @@ class BaseballDataService:
             if people_pattern.search(zip_info.filename)
         ]
     
-    def _load_chadwick_data(self):
+    def load_chadwick_data(self):
         """Load Chadwick Bureau player data from zip file (MLB players only)"""
         if self._chadwick_data is not None:
             return self._chadwick_data
@@ -77,7 +77,7 @@ class BaseballDataService:
             logger.error(f"Error loading Chadwick Bureau data: {e}")
             return []
     
-    def find_player_mlb_id(self, player_name: str, birth_year: Optional[int] = None, 
+    def find_player_mlb_id(self, player_name: str, players: pd.DataFrame, birth_year: Optional[int] = None, 
                             birth_month: Optional[int] = None, birth_day: Optional[int] = None) -> Optional[str]:
         """
         Find Baseball Reference ID for a player using Chadwick Bureau data
@@ -92,7 +92,6 @@ class BaseballDataService:
             int MLB Player ID (e.g., 545361) or None if not found
         """
         try:
-            players = self._load_chadwick_data()
             if not players:
                 return None
             
@@ -218,8 +217,8 @@ class BaseballDataService:
         stats = batting_stats_range('2022-05-01', date.today().strftime('%Y-%m-%d'))
         return stats[stats['mlbID'].astype(int) == mlb_id]['AB'].iloc[0]
     
-    def search_player(self, player_name: str, birth_year: Optional[int] = None,
-                     birth_month: Optional[int] = None, birth_day: Optional[int] = None, pitching: bool = False) -> Optional[Dict]:
+    def search_player(self, player_name: str, players: pd.DataFrame, birth_year: Optional[int] = None,
+                     birth_month: Optional[int] = None, birth_day: Optional[int] = None, pitching: bool = False) -> Optional[float]:
         """
         Search for a player using Chadwick Bureau lookup
         
@@ -228,13 +227,14 @@ class BaseballDataService:
             birth_year: Player's birth year (optional, for more accurate matching)
             birth_month: Player's birth month (optional, for more accurate matching)
             birth_day: Player's birth day (optional, for more accurate matching)
+            pitching: Whether to get pitching stats (default is False)
             
         Returns:
-            Count of either at bats or innings pitched
+            Count of either at bats or innings pitched as float
         """
         try:
             # Find the Baseball Reference ID
-            mlb_id = self.find_player_mlb_id(player_name, birth_year, birth_month, birth_day)
+            mlb_id = self.find_player_mlb_id(player_name, players, birth_year, birth_month, birth_day)
             if not mlb_id:
                 logger.warning(f"Could not find Baseball Reference ID for: {player_name}")
                 return None
@@ -247,25 +247,26 @@ class BaseballDataService:
             return None
     
     
-    def get_mlb_appearances(self, player_name: str, pitching: bool = False) -> Optional[float]:
+    def get_mlb_appearances(self, player_name: str, players: pd.DataFrame, pitching: bool = False) -> Optional[float]:
         """
-        Get MLB-only appearances (at bats and innings pitched) for a player
+        Get MLB-only appearances (at bats or innings pitched) for a player
         
         Args:
             player_name: Full name of the player
             pitching: Whether to get pitching stats (default is False)
         Returns:
-            Tuple of (at_bats, innings_pitched) - MLB-only stats
+            Count of either at bats or innings pitched as float
         """
         try:
             # Rate limiting
             time.sleep(5)
             
-            player_data = self.search_player(player_name, pitching=pitching)
+            player_data = self.search_player(player_name, players, pitching=pitching)
             if not player_data:
                 return None
             
             logger.info(f"Found MLB-only stats for {player_name}: {player_data} AB or IP")
+            return player_data
             
             
         except Exception as e:
