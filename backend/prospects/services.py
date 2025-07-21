@@ -17,11 +17,6 @@ class BaseballDataService:
     """Service for fetching baseball statistics from external sources using Chadwick Bureau lookup"""
     
     def __init__(self):
-        self.session = requests.Session()
-        self.session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        })
-        self.base_url = "https://www.baseball-reference.com"
         self.chadwick_url = "https://github.com/chadwickbureau/register/archive/refs/heads/master.zip"
         self._chadwick_data = None
     
@@ -40,7 +35,7 @@ class BaseballDataService:
             
         try:
             logger.info("Loading Chadwick Bureau player data from zip...")
-            response = self.session.get(self.chadwick_url)
+            response = requests.get(self.chadwick_url)
             response.raise_for_status()
             
             # Extract all people.csv files from the zip

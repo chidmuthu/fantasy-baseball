@@ -35,21 +35,7 @@ class ProspectViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """Filter queryset based on user permissions"""
-        queryset = Prospect.objects.select_related('team', 'created_by')
-        
-        # Admins can see all prospects
-        if self.request.user.is_staff:
-            return queryset
-        
-        # Regular users can see:
-        # 1. Prospects on their team
-        # 2. Available prospects (no team)
-        # 3. Prospects they created
-        return queryset.filter(
-            models.Q(team=self.request.user.team) |
-            models.Q(team__isnull=True) |
-            models.Q(created_by=self.request.user.team)
-        )
+        return Prospect.objects.select_related('team')
     
     def get_serializer_class(self):
         if self.action == 'create':
