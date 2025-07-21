@@ -1,9 +1,12 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { Navigate } from 'react-router-dom'
 
 function Login() {
-    const { login, register, loading, error } = useAuth()
+    const { login, register, loading, error, isAuthenticated, team } = useAuth()
     const [isRegistering, setIsRegistering] = useState(false)
+    const [loginSuccess, setLoginSuccess] = useState(false)
+    const [loginError, setLoginError] = useState(null)
     const [formData, setFormData] = useState({
         username: '',
         password: '',
@@ -12,12 +15,34 @@ function Login() {
         team_name: ''
     })
 
+    // Redirect to team page if already authenticated
+    if (isAuthenticated && team) {
+        return <Navigate to={`/teams/${team.id}`} replace />
+    }
+
+    // Show success message briefly before redirect
+    if (loginSuccess) {
+        return (
+            <div className="container">
+                <div className="card">
+                    <h2>Login Successful!</h2>
+                    <p>Redirecting to your team page...</p>
+                </div>
+            </div>
+        )
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault()
         
+        // Clear any previous errors
+        setLoginError(null)
+        
         if (isRegistering) {
             if (formData.password !== formData.password_confirm) {
-                alert('Passwords do not match')
+                setLoginError('Passwords do not match')
+                // Keep the error visible for 30 seconds
+                setTimeout(() => setLoginError(null), 30000)
                 return
             }
             
@@ -31,13 +56,27 @@ function Login() {
             
             if (result.success) {
                 // Registration successful, user is now logged in
+                setLoginSuccess(true)
+                // The redirect will happen automatically due to the isAuthenticated check above
                 return
+            } else {
+                // Registration failed
+                setLoginError(result.error || 'Registration failed')
+                // Keep the error visible for 30 seconds
+                setTimeout(() => setLoginError(null), 30000)
             }
         } else {
             const result = await login(formData.username, formData.password)
             if (result.success) {
                 // Login successful
+                setLoginSuccess(true)
+                // The redirect will happen automatically due to the isAuthenticated check above
                 return
+            } else {
+                // Login failed
+                setLoginError(result.error || 'Login failed')
+                // Keep the error visible for 30 seconds
+                setTimeout(() => setLoginError(null), 30000)
             }
         }
     }
@@ -54,13 +93,49 @@ function Login() {
             <div className="container">
                 <div className="card">
                     <h2>Loading...</h2>
+                    <p>Please wait while we check your authentication status.</p>
                 </div>
             </div>
         )
     }
 
     return (
-        <div className="container">
+        <div className="container" style={{ marginTop: loginError ? '60px' : '0' }}>
+            {loginError && (
+                <div style={{ 
+                    position: 'fixed',
+                    top: '0',
+                    left: '0',
+                    right: '0',
+                    zIndex: 9999,
+                    color: 'white', 
+                    padding: '15px', 
+                    backgroundColor: '#dc3545', 
+                    borderBottom: '2px solid #c82333',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }}>
+                    <div style={{ flex: 1 }}>
+                        <strong>Authentication Error:</strong> {loginError}
+                    </div>
+                    <button 
+                        onClick={() => setLoginError(null)}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'white',
+                            fontSize: '1.2rem',
+                            cursor: 'pointer',
+                            padding: '0 10px'
+                        }}
+                    >
+                        ×
+                    </button>
+                </div>
+            )}
+            
             <div className="card">
                 <h2>{isRegistering ? 'Register New Team' : 'Login to Your Team'}</h2>
                 

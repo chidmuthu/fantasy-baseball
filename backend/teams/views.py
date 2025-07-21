@@ -1,7 +1,10 @@
-from rest_framework import viewsets, status, permissions
+from rest_framework import viewsets, status, permissions, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework_simplejwt.views import TokenObtainPairView
+from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from .models import Team
 from .serializers import (
@@ -10,6 +13,9 @@ from .serializers import (
     TeamUpdateSerializer,
     UserRegistrationSerializer
 )
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class IsTeamOwnerOrAdmin(permissions.BasePermission):
@@ -110,3 +116,37 @@ class UserRegistrationViewSet(viewsets.GenericViewSet):
                 'team_id': user.team.id
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    """Custom token view that provides specific error messages"""
+    
+    def post(self, request, *args, **kwargs):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        
+        logger.info(f"CustomTokenObtainPairView: Login attempt for username: {username}")
+        logger.info(f"CustomTokenObtainPairView: Request data: {request.data}")
+        
+        # Check if username exists
+        try:
+            user = User.objects.get(username=username)
+            logger.info(f"CustomTokenObtainPairView: User found: {user.username}")
+        except User.DoesNotExist:
+            logger.warning(f"CustomTokenObtainPairView: Login failed: Username '{username}' does not exist")
+            return Response(
+                {'error': 'Username does not exist'}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        # Check if password is correct
+        if not user.check_password(password):
+            logger.warning(f"CustomTokenObtainPairView: Login failed: Incorrect password for username '{username}'")
+            return Response(
+                {'error': 'Password is incorrect'}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        # If we get here, authentication should succeed
+        logger.info(f"CustomTokenObtainPairView: Login successful for username: {username}")
+        return super().post(request, *args, **kwargs) 

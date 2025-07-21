@@ -3,18 +3,27 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } f
 import FarmSystem from './components/FarmSystem'
 import Bidding from './components/Bidding'
 import TeamDetail from './components/TeamDetail'
+import Landing from './components/Landing'
 import Login from './components/Login'
 import { AuthProvider, useAuth } from './context/AuthContext'
 
 function Navigation() {
   const location = useLocation()
-  const { user, logout } = useAuth()
+  const { user, team, logout } = useAuth()
   
   return (
     <nav className="nav">
+      {user && team && (
+        <Link 
+          to={`/teams/${team.id}`}
+          className={`nav-link ${location.pathname === `/teams/${team.id}` ? 'active' : ''}`}
+        >
+          My Team
+        </Link>
+      )}
       <Link 
-        to="/" 
-        className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}
+        to="/farm-system" 
+        className={`nav-link ${location.pathname === '/farm-system' ? 'active' : ''}`}
       >
         Farm System
       </Link>
@@ -27,7 +36,7 @@ function Navigation() {
       {user && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ color: 'white', fontSize: '0.9rem' }}>
-            Welcome, {user.username}!
+            Welcome, {team.name}!
           </span>
           <button 
             onClick={logout}
@@ -76,6 +85,11 @@ function AppContent() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={
+            <ProtectedRoute>
+              <Landing />
+            </ProtectedRoute>
+          } />
+          <Route path="/farm-system" element={
             <ProtectedRoute>
               <FarmSystem />
             </ProtectedRoute>
