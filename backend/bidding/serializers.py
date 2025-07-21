@@ -105,8 +105,19 @@ class BidCreateSerializer(serializers.ModelSerializer):
             current_bid=validated_data['starting_bid']
         )
         
+        # Create initial bid history entry for the nomination
+        BidHistory.objects.create(
+            bid=bid,
+            team=request.user.team,
+            amount=validated_data['starting_bid']
+        )
+        
         # Set initial expiration time
         bid.update_expiration_time()
+        
+        # Send WebSocket notification
+        from .tasks import notify_bid_created
+        notify_bid_created.delay(bid.id)
         
         return bid
 

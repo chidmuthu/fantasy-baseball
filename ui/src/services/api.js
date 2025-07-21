@@ -239,6 +239,10 @@ class ApiService {
         return await this.request('/bids/active/');
     }
 
+    async getCompletedBids() {
+        return await this.request('/bids/completed/');
+    }
+
     async getMyBids() {
         return await this.request('/bids/my_bids/');
     }
@@ -255,6 +259,10 @@ class ApiService {
                 starting_bid: startingBid,
             }),
         });
+    }
+
+    async getProspectBidHistory(prospectId) {
+        return await this.request(`/bids/${prospectId}/prospect_history/`);
     }
 
     async placeBid(bidId, amount) {

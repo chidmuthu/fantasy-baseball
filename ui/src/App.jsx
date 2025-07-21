@@ -2,6 +2,7 @@ import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom'
 import FarmSystem from './components/FarmSystem'
 import Bidding from './components/Bidding'
+import BidHistory from './components/BidHistory'
 import TeamDetail from './components/TeamDetail'
 import Landing from './components/Landing'
 import Login from './components/Login'
@@ -97,6 +98,11 @@ function AppContent() {
           <Route path="/bidding" element={
             <ProtectedRoute>
               <Bidding />
+            </ProtectedRoute>
+          } />
+          <Route path="/bidding/prospect/:prospectId" element={
+            <ProtectedRoute>
+              <BidHistory />
             </ProtectedRoute>
           } />
           <Route path="/teams/:teamId" element={

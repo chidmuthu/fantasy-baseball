@@ -156,6 +156,36 @@ body {
   padding: 20px;
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
   border-left: 4px solid #667eea;
+  transition: transform 0.2s ease;
+}
+
+.clickable-prospect-name {
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.clickable-prospect-name:hover {
+  color: #667eea !important;
+}
+
+.clickable-prospect-name::after {
+  content: "👁️";
+  position: absolute;
+  right: -30px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.clickable-prospect-name:hover::after {
+  opacity: 1;
+}
+
+.tab-button:hover {
+  background: rgba(42, 82, 152, 0.1) !important;
+  color: #2a5298 !important;
 }
 
 .prospect-card h3 {

@@ -38,6 +38,13 @@ class BidViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
     @action(detail=False, methods=['get'])
+    def completed(self, request):
+        """Get all completed bids"""
+        bids = self.get_queryset().filter(status__in=['completed', 'cancelled'])
+        serializer = self.get_serializer(bids, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
     def my_bids(self, request):
         """Get bids created by the current user's team"""
         bids = self.get_queryset().filter(nominator=request.user.team)
@@ -50,6 +57,38 @@ class BidViewSet(viewsets.ModelViewSet):
         bids = self.get_queryset().filter(current_bidder=request.user.team, status='active')
         serializer = self.get_serializer(bids, many=True)
         return Response(serializer.data)
+    
+    @action(detail=True, methods=['get'])
+    def prospect_history(self, request, pk=None):
+        """Get all bid history for a specific prospect"""
+        try:
+            from prospects.models import Prospect
+            prospect = Prospect.objects.get(id=pk)
+            
+            # Get all bids for this prospect (active and completed)
+            bids = self.get_queryset().filter(prospect=prospect)
+            serializer = self.get_serializer(bids, many=True)
+            
+            return Response({
+                'prospect': {
+                    'id': prospect.id,
+                    'name': prospect.name,
+                    'position': prospect.position,
+                    'organization': prospect.organization,
+                    'level': prospect.level,
+                    'eta': prospect.eta,
+                    'age': prospect.age,
+                    'is_eligible': prospect.is_eligible,
+                    'eligibility_status': prospect.eligibility_status
+                },
+                'bids': serializer.data
+            })
+            
+        except Prospect.DoesNotExist:
+            return Response(
+                {'error': 'Prospect not found'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
     
     @action(detail=True, methods=['post'])
     def place_bid(self, request, pk=None):

@@ -125,22 +125,7 @@ function farmReducer(state, action) {
 export function FarmProvider({ children }) {
   const [state, dispatch] = useReducer(farmReducer, initialState)
 
-  // Check for completed bids every minute
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = new Date()
-      state.activeBids.forEach(bid => {
-        const lastBidTime = new Date(bid.lastBidTime)
-        const hoursSinceLastBid = (now - lastBidTime) / (1000 * 60 * 60)
-        
-        if (hoursSinceLastBid >= 24) {
-          dispatch({ type: 'COMPLETE_BID', payload: { bidId: bid.id } })
-        }
-      })
-    }, 60000) // Check every minute
 
-    return () => clearInterval(interval)
-  }, [state.activeBids])
 
   // Load data from localStorage on mount
   useEffect(() => {

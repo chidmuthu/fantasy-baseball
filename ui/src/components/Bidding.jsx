@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import { formatDistanceToNow } from 'date-fns'
 
 function Bidding() {
   const { team, refreshTeam } = useAuth()
+  const navigate = useNavigate()
   const [activeBids, setActiveBids] = useState([])
+  const [completedBids, setCompletedBids] = useState([])
+  const [currentTab, setCurrentTab] = useState('active')
   const [showNominateModal, setShowNominateModal] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -21,21 +25,49 @@ function Bidding() {
   })
 
   useEffect(() => {
-    loadActiveBids()
-    // Refresh bids and team data every 5 seconds
-    const interval = setInterval(async () => {
-      await Promise.all([
-        loadActiveBids(),
+    loadBids()
+    
+    // Set up WebSocket connection for real-time updates
+    const ws = new WebSocket('ws://localhost:8000/ws/bidding/')
+    
+    ws.onopen = () => {
+      console.log('WebSocket connected for bidding')
+    }
+    
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data)
+      
+      // Handle different types of WebSocket messages
+      if (data.type === 'bid_placed' || data.type === 'bid_completed' || data.type === 'new_bid') {
+        // Refresh bids when any bid activity occurs
+        loadBids()
         refreshTeam()
-      ])
-    }, 5000)
-    return () => clearInterval(interval)
+      }
+    }
+    
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error)
+    }
+    
+    ws.onclose = () => {
+      console.log('WebSocket disconnected')
+    }
+    
+    // Cleanup WebSocket on component unmount
+    return () => {
+      ws.close()
+    }
   }, [refreshTeam])
 
-  const loadActiveBids = async () => {
+  const loadBids = async () => {
     try {
-      const bidsData = await api.getActiveBids()
-      setActiveBids(bidsData.results || bidsData)
+      setLoading(true)
+      const [activeBidsData, completedBidsData] = await Promise.all([
+        api.getActiveBids(),
+        api.getCompletedBids()
+      ])
+      setActiveBids(activeBidsData.results || activeBidsData)
+      setCompletedBids(completedBidsData.results || completedBidsData)
       setError(null)
     } catch (error) {
       setError('Failed to load bids: ' + error.message)
@@ -72,7 +104,7 @@ function Bidding() {
       
       // Refresh both bids and team data
       await Promise.all([
-        loadActiveBids(),
+        loadBids(),
         refreshTeam()
       ])
     } catch (error) {
@@ -85,28 +117,21 @@ function Bidding() {
 
   const handleBid = async (bidId, amount) => {
     try {
-      setBidError(null) // Clear any previous errors
-      console.log(`Attempting to place bid: ${amount} POM on bid ${bidId}`)
-      console.log(`Current team POM balance: ${team?.pom_balance}`)
-      
-      const result = await api.placeBid(bidId, amount)
-      console.log('Bid placed successfully:', result)
+      console.log(`Frontend: Attempting to place bid ${amount} POM`)
+      await api.placeBid(bidId, amount)
       
       // Refresh both bids and team data
       await Promise.all([
-        loadActiveBids(),
+        loadBids(),
         refreshTeam()
       ])
+      
+      console.log(`Bid placed successfully: ${amount} POM`)
     } catch (error) {
-      console.error('Bid error details:', {
-        message: error.message,
-        name: error.name,
-        stack: error.stack
-      })
-      console.error('Full error object:', error)
+      console.error('Bid error:', error)
       setBidError(error.message)
-      // Keep the error visible for 30 seconds
-      setTimeout(() => setBidError(null), 30000)
+      // Keep the error visible for 10 seconds
+      setTimeout(() => setBidError(null), 10000)
     }
   }
 
@@ -114,26 +139,25 @@ function Bidding() {
     if (!expiresAt) return 'No expiration set'
     
     const now = new Date()
-    const expiration = new Date(expiresAt)
-    const timeRemaining = expiration - now
+    const expires = new Date(expiresAt)
+    const diff = expires - now
     
-    if (timeRemaining <= 0) return 'Ending soon...'
+    if (diff <= 0) return 'Expired'
     
-    const hours = Math.floor(timeRemaining / (1000 * 60 * 60))
-    const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60))
+    const hours = Math.floor(diff / (1000 * 60 * 60))
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
     
-    if (hours === 0) {
+    if (hours > 0) {
+      return `${hours}h ${minutes}m remaining`
+    } else {
       return `${minutes}m remaining`
     }
-    
-    return `${hours}h ${minutes}m remaining`
   }
 
   if (loading) {
     return (
-      <div>
-        <h2>Active Bidding</h2>
-        <p>Loading bids...</p>
+      <div className="card">
+        <h2>Loading...</h2>
       </div>
     )
   }
@@ -141,7 +165,7 @@ function Bidding() {
   if (error) {
     return (
       <div>
-        <h2>Active Bidding</h2>
+        <h2>Bidding</h2>
         <div style={{ color: 'red', padding: '10px', backgroundColor: '#fee', borderRadius: '5px' }}>
           {error}
         </div>
@@ -152,8 +176,48 @@ function Bidding() {
   return (
     <div style={{ marginTop: bidError ? '60px' : '0' }}>
       <div className="card">
-        <h2>Active Bidding</h2>
+        <h2>Bidding</h2>
         <p>Bid on prospects and nominate new ones for your farm system.</p>
+        
+        {/* Tab Navigation */}
+        <div className="tab-navigation" style={{
+          display: 'flex',
+          borderBottom: '2px solid #e1e5e9',
+          marginBottom: '20px'
+        }}>
+          <button
+            className={`tab-button ${currentTab === 'active' ? 'active' : ''}`}
+            onClick={() => setCurrentTab('active')}
+            style={{
+              padding: '12px 24px',
+              border: 'none',
+              background: currentTab === 'active' ? '#2a5298' : 'transparent',
+              color: currentTab === 'active' ? 'white' : '#666',
+              cursor: 'pointer',
+              borderBottom: currentTab === 'active' ? '2px solid #2a5298' : '2px solid transparent',
+              fontWeight: currentTab === 'active' ? '600' : '400',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            Active Bids ({activeBids.length})
+          </button>
+          <button
+            className={`tab-button ${currentTab === 'completed' ? 'active' : ''}`}
+            onClick={() => setCurrentTab('completed')}
+            style={{
+              padding: '12px 24px',
+              border: 'none',
+              background: currentTab === 'completed' ? '#2a5298' : 'transparent',
+              color: currentTab === 'completed' ? 'white' : '#666',
+              cursor: 'pointer',
+              borderBottom: currentTab === 'completed' ? '2px solid #2a5298' : '2px solid transparent',
+              fontWeight: currentTab === 'completed' ? '600' : '400',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            Completed Bids ({completedBids.length})
+          </button>
+        </div>
         
         {bidError && (
           <div style={{ 
@@ -197,123 +261,206 @@ function Bidding() {
           </div>
         )}
 
-        <button 
-          className="btn btn-success"
-          onClick={() => setShowNominateModal(true)}
-          disabled={!team || team.pom_balance < 5}
-        >
-          Nominate New Prospect
-        </button>
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+          {currentTab === 'active' && (
+            <button 
+              className="btn btn-success"
+              onClick={() => setShowNominateModal(true)}
+              disabled={!team || team.pom_balance < 5}
+            >
+              Nominate New Prospect
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="grid">
-        {activeBids.map(bid => {
-          const currentBidder = bid.current_bidder
-          const canBid = team && team.pom_balance > bid.current_bid && team.id !== currentBidder?.id
-          
-          return (
-            <div key={bid.id} className="prospect-card">
-              <h3>{bid.prospect.name}</h3>
-              <div className="prospect-info">
-                <p><span>Position:</span> {bid.prospect.position}</p>
-                <p><span>Organization:</span> {bid.prospect.organization}</p>
-                <p><span>Level:</span> {bid.prospect.level}</p>
-                <p><span>ETA:</span> {bid.prospect.eta}</p>
-                <p><span>Age:</span> {bid.prospect.age}</p>
-                
-                {/* Eligibility Information */}
-                <div style={{ 
-                  marginTop: '8px', 
-                  padding: '6px', 
-                  backgroundColor: bid.prospect.is_eligible ? '#e8f5e8' : '#ffe8e8',
-                  borderRadius: '4px',
-                  border: `1px solid ${bid.prospect.is_eligible ? '#4caf50' : '#f44336'}`
-                }}>
-                  <p style={{ 
-                    margin: '0', 
-                    fontWeight: 'bold',
-                    fontSize: '0.9rem',
-                    color: bid.prospect.is_eligible ? '#2e7d32' : '#c62828'
+      {/* Active Bids Tab */}
+      {currentTab === 'active' && (
+        <div className="grid">
+          {activeBids.map(bid => {
+            const currentBidder = bid.current_bidder
+            const canBid = team && team.pom_balance > bid.current_bid && team.id !== currentBidder?.id
+            
+            return (
+              <div key={bid.id} className="prospect-card">
+                <h3 
+                  className="clickable-prospect-name" 
+                  onClick={() => navigate(`/bidding/prospect/${bid.prospect.id}`)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  {bid.prospect.name}
+                </h3>
+                <div className="prospect-info">
+                  <p><span>Position:</span> {bid.prospect.position}</p>
+                  <p><span>Organization:</span> {bid.prospect.organization}</p>
+                  <p><span>Level:</span> {bid.prospect.level}</p>
+                  <p><span>ETA:</span> {bid.prospect.eta}</p>
+                  <p><span>Age:</span> {bid.prospect.age}</p>
+                  
+                  {/* Eligibility Information */}
+                  <div style={{ 
+                    marginTop: '8px', 
+                    padding: '6px', 
+                    backgroundColor: bid.prospect.is_eligible ? '#e8f5e8' : '#ffe8e8',
+                    borderRadius: '4px',
+                    border: `1px solid ${bid.prospect.is_eligible ? '#4caf50' : '#f44336'}`
                   }}>
-                    {bid.prospect.eligibility_status}
-                  </p>
-                  {bid.prospect.position === 'P' ? (
-                    <p style={{ margin: '2px 0 0 0', fontSize: '0.8rem' }}>
-                      IP: {bid.prospect.innings_pitched} / {bid.prospect.eligibility_threshold_ip}
+                    <p style={{ 
+                      margin: '0', 
+                      fontWeight: 'bold',
+                      fontSize: '0.9rem',
+                      color: bid.prospect.is_eligible ? '#2e7d32' : '#c62828'
+                    }}>
+                      {bid.prospect.eligibility_status}
                     </p>
-                  ) : (
-                    <p style={{ margin: '2px 0 0 0', fontSize: '0.8rem' }}>
-                      AB: {bid.prospect.at_bats} / {bid.prospect.eligibility_threshold_ab}
-                    </p>
-                  )}
-                  {bid.prospect.tags_applied > 0 && (
-                    <p style={{ margin: '2px 0 0 0', fontSize: '0.8rem', fontStyle: 'italic' }}>
-                      Tags: {bid.prospect.tags_applied}
-                    </p>
-                  )}
-                </div>
-              </div>
-              
-              <div className="bid-section">
-                <p><strong>Current Bid:</strong> {bid.current_bid} POM</p>
-                <p><strong>Current Leader:</strong> {currentBidder?.name}</p>
-                <p><strong>Started:</strong> {formatDistanceToNow(new Date(bid.created_at), { addSuffix: true })}</p>
-                <div className="timer">
-                  <strong>Time Remaining:</strong> {getTimeRemaining(bid.expires_at)}
-                </div>
-                
-                {canBid && (
-                  <div className="bid-input">
-                    <input
-                      type="number"
-                      min={bid.current_bid + 1}
-                      placeholder={`Min bid: ${bid.current_bid + 1}`}
-                      id={`bid-${bid.id}`}
-                    />
-                    <button 
-                      className="btn"
-                      onClick={() => {
-                        const input = document.getElementById(`bid-${bid.id}`)
-                        const amount = parseInt(input.value)
-                        if (amount > bid.current_bid) {
-                          console.log(`Frontend: Attempting to place bid ${amount} POM`)
-                          handleBid(bid.id, amount)
-                          input.value = ''
-                        } else {
-                          console.log(`Frontend: Bid amount ${amount} must be higher than current bid ${bid.current_bid}`)
-                          setBidError(`Bid must be higher than current bid of ${bid.current_bid} POM`)
-                          setTimeout(() => setBidError(null), 5000)
-                        }
-                      }}
-                    >
-                      Place Bid
-                    </button>
+                    {bid.prospect.position === 'P' ? (
+                      <p style={{ margin: '5px 0 0 0', fontSize: '0.8rem' }}>
+                        {bid.prospect.innings_pitched} IP / {bid.prospect.eligibility_threshold_ip} IP threshold
+                      </p>
+                    ) : (
+                      <p style={{ margin: '5px 0 0 0', fontSize: '0.8rem' }}>
+                        {bid.prospect.at_bats} AB / {bid.prospect.eligibility_threshold_ab} AB threshold
+                      </p>
+                    )}
                   </div>
-                )}
-                
-                {!canBid && team?.id === currentBidder?.id && (
-                  <p style={{ color: '#28a745', fontWeight: 'bold' }}>
-                    You are currently winning this bid!
-                  </p>
-                )}
-                
-                {!canBid && team?.id !== currentBidder?.id && (
-                  <p style={{ color: '#dc3545' }}>
-                    {team?.pom_balance <= bid.current_bid 
-                      ? 'Insufficient POM to bid' 
-                      : 'You cannot outbid yourself'}
-                  </p>
-                )}
-              </div>
-            </div>
-          )
-        })}
-      </div>
+                </div>
 
-      {activeBids.length === 0 && (
+                <div className="bid-section">
+                  <p><strong>Current Bid:</strong> {bid.current_bid} POM</p>
+                  <p><strong>Current Leader:</strong> {currentBidder?.name}</p>
+                  <p><strong>Started:</strong> {formatDistanceToNow(new Date(bid.created_at), { addSuffix: true })}</p>
+                  <div className="timer">
+                    <strong>Time Remaining:</strong> {getTimeRemaining(bid.expires_at)}
+                  </div>
+                  
+                  {canBid && (
+                    <div className="bid-input">
+                      <input
+                        type="number"
+                        min={bid.current_bid + 1}
+                        placeholder={`Min bid: ${bid.current_bid + 1}`}
+                        id={`bid-${bid.id}`}
+                        onClick={(e) => e.stopPropagation()} // Prevent navigation to bid history
+                      />
+                      <button 
+                        className="btn"
+                        onClick={(e) => {
+                          e.stopPropagation() // Prevent navigation to bid history
+                          const input = document.getElementById(`bid-${bid.id}`)
+                          const amount = parseInt(input.value)
+                          if (amount > bid.current_bid) {
+                            console.log(`Frontend: Attempting to place bid ${amount} POM`)
+                            handleBid(bid.id, amount)
+                            input.value = ''
+                          } else {
+                            console.log(`Frontend: Bid amount ${amount} must be higher than current bid ${bid.current_bid}`)
+                            setBidError(`Bid must be higher than current bid of ${bid.current_bid} POM`)
+                            setTimeout(() => setBidError(null), 5000)
+                          }
+                        }}
+                      >
+                        Place Bid
+                      </button>
+                    </div>
+                  )}
+                  
+                  {!canBid && team?.id === currentBidder?.id && (
+                    <p style={{ color: '#28a745', fontWeight: 'bold' }}>
+                      You are currently winning this bid!
+                    </p>
+                  )}
+                  
+                  {!canBid && team?.id !== currentBidder?.id && (
+                    <p style={{ color: '#dc3545' }}>
+                      {team?.pom_balance <= bid.current_bid 
+                        ? 'Insufficient POM to bid' 
+                        : 'You cannot outbid yourself'}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {currentTab === 'active' && activeBids.length === 0 && (
         <div className="card">
           <h3>No Active Bids</h3>
           <p>Be the first to nominate a prospect for bidding!</p>
+        </div>
+      )}
+
+      {/* Completed Bids Tab */}
+      {currentTab === 'completed' && (
+        <div className="grid">
+          {completedBids.map(bid => {
+            const currentBidder = bid.current_bidder
+            const isWinner = team?.id === currentBidder?.id
+            
+            return (
+              <div key={bid.id} className="prospect-card" style={{
+                backgroundColor: bid.status === 'completed' ? '#e8f5e8' : '#f8f9fa',
+                borderLeft: bid.status === 'completed' ? '4px solid #28a745' : '4px solid #6c757d'
+              }}>
+                <h3 
+                  className="clickable-prospect-name" 
+                  onClick={() => navigate(`/bidding/prospect/${bid.prospect.id}`)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  {bid.prospect.name}
+                </h3>
+                <div className="prospect-info">
+                  <p><span>Position:</span> {bid.prospect.position}</p>
+                  <p><span>Organization:</span> {bid.prospect.organization}</p>
+                  <p><span>Level:</span> {bid.prospect.level}</p>
+                  <p><span>ETA:</span> {bid.prospect.eta}</p>
+                  <p><span>Age:</span> {bid.prospect.age}</p>
+                  
+                  {/* Status Information */}
+                  <div style={{ 
+                    marginTop: '8px', 
+                    padding: '6px', 
+                    backgroundColor: bid.status === 'completed' ? '#e8f5e8' : '#f8f9fa',
+                    borderRadius: '4px',
+                    border: `1px solid ${bid.status === 'completed' ? '#28a745' : '#6c757d'}`
+                  }}>
+                    <p style={{ 
+                      margin: '0', 
+                      fontWeight: 'bold',
+                      fontSize: '0.9rem',
+                      color: bid.status === 'completed' ? '#2e7d32' : '#6c757d'
+                    }}>
+                      {bid.status === 'completed' ? 'COMPLETED' : 'CANCELLED'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bid-section">
+                  <p><strong>Final Bid:</strong> {bid.current_bid} POM</p>
+                  <p><strong>Winner:</strong> {currentBidder?.name}</p>
+                  <p><strong>Nominated by:</strong> {bid.nominator?.name}</p>
+                  <p><strong>Started:</strong> {formatDistanceToNow(new Date(bid.created_at), { addSuffix: true })}</p>
+                  {bid.completed_at && (
+                    <p><strong>Completed:</strong> {formatDistanceToNow(new Date(bid.completed_at), { addSuffix: true })}</p>
+                  )}
+                  
+                  {isWinner && (
+                    <p style={{ color: '#28a745', fontWeight: 'bold', marginTop: '10px' }}>
+                      🏆 You won this prospect!
+                    </p>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {currentTab === 'completed' && completedBids.length === 0 && (
+        <div className="card">
+          <h3>No Completed Bids</h3>
+          <p>No bids have been completed yet.</p>
         </div>
       )}
 
@@ -408,15 +555,15 @@ function Bidding() {
               </div>
               
               <div className="form-group">
-                <label htmlFor="eta">ETA (Year):</label>
+                <label htmlFor="eta">ETA (Expected Year of MLB Arrival):</label>
                 <input
                   id="eta"
                   type="number"
-                  min={new Date().getFullYear()}
-                  max={new Date().getFullYear() + 10}
                   className="form-control"
                   value={nominationForm.eta}
                   onChange={(e) => setNominationForm({...nominationForm, eta: e.target.value})}
+                  min={new Date().getFullYear()}
+                  max={new Date().getFullYear() + 10}
                   required
                 />
               </div>
@@ -426,16 +573,16 @@ function Bidding() {
                 <input
                   id="startingBid"
                   type="number"
-                  min="5"
-                  max={team?.pom_balance || 100}
                   className="form-control"
                   value={nominationForm.startingBid}
                   onChange={(e) => setNominationForm({...nominationForm, startingBid: parseInt(e.target.value)})}
+                  min="5"
+                  max={team?.pom_balance || 100}
                   required
                 />
               </div>
               
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
                 <button 
                   type="button" 
                   className="btn btn-secondary"
@@ -443,7 +590,11 @@ function Bidding() {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-success">
+                <button 
+                  type="submit" 
+                  className="btn btn-success"
+                  disabled={!team || team.pom_balance < nominationForm.startingBid}
+                >
                   Nominate Prospect
                 </button>
               </div>

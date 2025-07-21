@@ -105,6 +105,10 @@ class Bid(models.Model):
         # Update expiration time (extends the bid when someone bids)
         self.update_expiration_time()
         
+        # Send WebSocket notification
+        from .tasks import notify_bid_placed
+        notify_bid_placed.delay(self.id)
+        
         logger.info(f"Bid placed successfully: {amount} POM by {team.name} on {self.prospect.name}")
         
         return True

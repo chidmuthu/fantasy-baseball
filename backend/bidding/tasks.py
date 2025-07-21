@@ -71,6 +71,7 @@ def notify_bid_completed(bid_id):
             {
                 'type': 'bid_completed',
                 'bid_id': bid.id,
+                'prospect_id': bid.prospect.id,
                 'data': notification_data['data']
             }
         )
@@ -136,6 +137,7 @@ def notify_bid_created(bid_id):
             "bidding_updates",
             {
                 'type': 'new_bid',
+                'prospect_id': bid.prospect.id,
                 'data': notification_data
             }
         )
@@ -159,6 +161,53 @@ def notify_bid_created(bid_id):
         logger.error(f"❌ Bid {bid_id} not found for notification")
     except Exception as e:
         logger.error(f"❌ Error sending new bid notification: {str(e)}")
+
+
+@shared_task
+def notify_bid_placed(bid_id):
+    """Send WebSocket notification when a bid is placed on an auction"""
+    try:
+        bid = Bid.objects.get(id=bid_id)
+        channel_layer = get_channel_layer()
+        
+        notification_data = {
+            'prospect_name': bid.prospect.name,
+            'prospect_position': bid.prospect.position,
+            'current_bid': bid.current_bid,
+            'current_bidder': bid.current_bidder.name,
+            'bid_id': bid.id,
+        }
+        
+        # Send to general bidding channel
+        async_to_sync(channel_layer.group_send)(
+            "bidding_updates",
+            {
+                'type': 'bid_placed',
+                'bid_id': bid.id,
+                'prospect_id': bid.prospect.id,
+                'data': notification_data
+            }
+        )
+        
+        # Send team update to the bidding team
+        async_to_sync(channel_layer.group_send)(
+            f"team_{bid.current_bidder.id}",
+            {
+                'type': 'team_update',
+                'data': {
+                    'pom_balance': bid.current_bidder.pom_balance,
+                    'available_pom': bid.current_bidder.get_available_pom(),
+                    'message': f'Bid placed: {bid.prospect.name} for {bid.current_bid} POM'
+                }
+            }
+        )
+        
+        logger.info(f"📢 Sent WebSocket notifications for bid placed: {bid.prospect.name}")
+        
+    except Bid.DoesNotExist:
+        logger.error(f"❌ Bid {bid_id} not found for notification")
+    except Exception as e:
+        logger.error(f"❌ Error sending bid placed notification: {str(e)}")
 
 
 @shared_task
