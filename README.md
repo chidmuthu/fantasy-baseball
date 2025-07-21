@@ -71,6 +71,8 @@ npm run dev
 - **Prospect Database**: Manual entry of minor league prospects
 - **Real-time Bidding**: Live auction system for prospects
 - **POM Currency**: Prospect Offer Money system for bidding
+- **Automatic Stats Updates**: Nightly updates of MLB appearances from Baseball Reference
+- **Eligibility Tracking**: Automatic tracking of prospect eligibility based on MLB stats
 - **Admin Interface**: Django admin for league management
 - **WebSocket Support**: Real-time updates across browsers
 

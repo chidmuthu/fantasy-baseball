@@ -11,6 +11,7 @@ from .serializers import (
     ProspectTagSerializer
 )
 from django.db import models
+from .tasks import update_single_prospect_stats
 
 
 class IsProspectOwnerOrAdmin(permissions.BasePermission):
@@ -87,6 +88,34 @@ class ProspectViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(ProspectSerializer(prospect).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['post'])
+    def update_stats(self, request, pk=None):
+        """Update prospect MLB stats from external sources"""
+        prospect = self.get_object()
+        
+        # Only team owner or admin can update stats
+        if not request.user.is_staff and prospect.team != request.user.team:
+            return Response(
+                {'error': 'You can only update stats for prospects on your team'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        try:
+            # Trigger the background task
+            task = update_single_prospect_stats.delay(prospect.id)
+            
+            return Response({
+                'message': f'Stats update started for {prospect.name}',
+                'task_id': task.id,
+                'prospect': ProspectSerializer(prospect).data
+            })
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to start stats update: {str(e)}'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
     @action(detail=True, methods=['post'])
     def release(self, request, pk=None):

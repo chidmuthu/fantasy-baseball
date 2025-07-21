@@ -224,6 +224,12 @@ class ApiService {
         });
     }
 
+    async updateProspectStats(prospectId) {
+        return await this.request(`/prospects/${prospectId}/update_stats/`, {
+            method: 'POST',
+        });
+    }
+
     // Bidding
     async getBids() {
         return await this.request('/bids/');

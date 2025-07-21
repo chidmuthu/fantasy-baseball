@@ -23,6 +23,14 @@ app.conf.beat_schedule = {
         'task': 'bidding.tasks.check_expired_bids',
         'schedule': 30.0,  # Every 30 seconds
     },
+    'update-prospect-stats-daily': {
+        'task': 'prospects.tasks.update_prospect_stats',
+        'schedule': crontab(hour=3, minute=0),  # Daily at 3 AM
+    },
+    'check-prospect-eligibility-daily': {
+        'task': 'prospects.tasks.check_prospect_eligibility',
+        'schedule': crontab(hour=4, minute=0),  # Daily at 4 AM
+    },
     # 'cleanup-old-bids-daily': {
     #     'task': 'bidding.tasks.cleanup_old_bids',
     #     'schedule': crontab(hour=2, minute=0),  # Daily at 2 AM
