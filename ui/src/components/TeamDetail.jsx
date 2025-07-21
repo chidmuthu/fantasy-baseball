@@ -103,6 +103,24 @@ function TeamDetail() {
     setEditForm(prev => ({ ...prev, [field]: value }))
   }
 
+  const tagProspect = async (prospectId) => {
+    try {
+      const response = await api.tagProspect(prospectId)
+      
+      // Update the prospects list with the tagged prospect
+      setProspects(prospects.map(p => 
+        p.id === prospectId 
+          ? response.prospect
+          : p
+      ))
+      
+      // Show success message
+      alert(response.message)
+    } catch (error) {
+      alert('Failed to tag prospect: ' + error.message)
+    }
+  }
+
   if (loading) {
     return (
       <div>
@@ -252,6 +270,29 @@ function TeamDetail() {
                       />
                     </div>
                     
+                    <div className="form-group">
+                      <label>At Bats:</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        value={editForm.at_bats}
+                        onChange={(e) => handleEditChange('at_bats', parseInt(e.target.value) || 0)}
+                        min={0}
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Innings Pitched:</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        value={editForm.innings_pitched}
+                        onChange={(e) => handleEditChange('innings_pitched', parseFloat(e.target.value) || 0)}
+                        min={0}
+                        step={0.1}
+                      />
+                    </div>
+                    
                     <div style={{ 
                       display: 'flex', 
                       gap: '10px', 
@@ -283,6 +324,37 @@ function TeamDetail() {
                       <p><span>Level:</span> {prospect.level}</p>
                       <p><span>ETA:</span> {prospect.eta}</p>
                       <p><span>Age:</span> {prospect.age}</p>
+                      
+                      {/* Eligibility Information */}
+                      <div style={{ 
+                        marginTop: '10px', 
+                        padding: '8px', 
+                        backgroundColor: prospect.is_eligible ? '#e8f5e8' : '#ffe8e8',
+                        borderRadius: '4px',
+                        border: `1px solid ${prospect.is_eligible ? '#4caf50' : '#f44336'}`
+                      }}>
+                        <p style={{ 
+                          margin: '0', 
+                          fontWeight: 'bold',
+                          color: prospect.is_eligible ? '#2e7d32' : '#c62828'
+                        }}>
+                          Eligibility: {prospect.eligibility_status}
+                        </p>
+                        {prospect.position === 'P' ? (
+                          <p style={{ margin: '2px 0 0 0', fontSize: '0.9rem' }}>
+                            IP: {prospect.innings_pitched} / {prospect.eligibility_threshold_ip}
+                          </p>
+                        ) : (
+                          <p style={{ margin: '2px 0 0 0', fontSize: '0.9rem' }}>
+                            AB: {prospect.at_bats} / {prospect.eligibility_threshold_ab}
+                          </p>
+                        )}
+                        {prospect.tags_applied > 0 && (
+                          <p style={{ margin: '2px 0 0 0', fontSize: '0.9rem', fontStyle: 'italic' }}>
+                            Tags applied: {prospect.tags_applied}
+                          </p>
+                        )}
+                      </div>
                     </div>
 
                     <div style={{ 
@@ -297,13 +369,28 @@ function TeamDetail() {
                         Added: {new Date(prospect.created_at).toLocaleDateString()}
                       </span>
                       {userTeam && userTeam.id === team.id && (
-                        <button 
-                          className="btn btn-secondary"
-                          style={{ fontSize: '0.8rem', padding: '5px 10px' }}
-                          onClick={() => startEditing(prospect)}
-                        >
-                          Edit
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button 
+                            className="btn btn-secondary"
+                            style={{ fontSize: '0.8rem', padding: '5px 10px' }}
+                            onClick={() => startEditing(prospect)}
+                          >
+                            Edit
+                          </button>
+                          {prospect.can_be_tagged && (
+                            <button 
+                              className="btn btn-warning"
+                              style={{ fontSize: '0.8rem', padding: '5px 10px' }}
+                              onClick={() => {
+                                if (window.confirm(`Tag this prospect to extend eligibility? This will cost ${prospect.next_tag_cost} POM.`)) {
+                                  tagProspect(prospect.id)
+                                }
+                              }}
+                            >
+                              Tag ({prospect.next_tag_cost} POM)
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>

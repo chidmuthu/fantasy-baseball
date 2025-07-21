@@ -7,7 +7,8 @@ from .serializers import (
     ProspectSerializer,
     ProspectCreateSerializer,
     ProspectUpdateSerializer,
-    ProspectTransferSerializer
+    ProspectTransferSerializer,
+    ProspectTagSerializer
 )
 from django.db import models
 
@@ -103,4 +104,36 @@ class ProspectViewSet(viewsets.ModelViewSet):
         prospect.save()
         
         serializer = self.get_serializer(prospect)
-        return Response(serializer.data) 
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def tag(self, request, pk=None):
+        """Tag a prospect to extend eligibility (costs POM)"""
+        prospect = self.get_object()
+        
+        # Only team owner can tag their prospects
+        if not request.user.is_staff and prospect.team != request.user.team:
+            return Response(
+                {'error': 'You can only tag prospects on your team'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        serializer = ProspectTagSerializer(data=request.data, context={
+            'prospect': prospect,
+            'request': request
+        })
+        
+        if serializer.is_valid():
+            try:
+                prospect.tag_prospect(request.user.team)
+                return Response({
+                    'message': f'Prospect tagged successfully! Cost: {prospect.next_tag_cost // 2} POM',
+                    'prospect': ProspectSerializer(prospect).data
+                })
+            except ValueError as e:
+                return Response(
+                    {'error': str(e)}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) 

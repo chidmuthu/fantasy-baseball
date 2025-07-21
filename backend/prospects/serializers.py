@@ -9,14 +9,27 @@ class ProspectSerializer(serializers.ModelSerializer):
     current_bid = serializers.SerializerMethodField()
     age = serializers.ReadOnlyField()  # Add age as a read-only field
     
+    # Eligibility fields
+    is_eligible = serializers.ReadOnlyField()
+    eligibility_status = serializers.ReadOnlyField()
+    can_be_tagged = serializers.ReadOnlyField()
+    eligibility_threshold_ab = serializers.ReadOnlyField()
+    eligibility_threshold_ip = serializers.ReadOnlyField()
+    next_tag_cost = serializers.ReadOnlyField()
+    last_tagged_by = serializers.SerializerMethodField()
+    
     class Meta:
         model = Prospect
         fields = [
             'id', 'name', 'position', 'organization', 'date_of_birth', 'age', 'level', 'eta',
             'team', 'acquired_at', 'created_by', 'created_at', 'updated_at',
-            'is_available', 'current_bid'
+            'is_available', 'current_bid',
+            # Eligibility fields
+            'at_bats', 'innings_pitched', 'tags_applied', 'last_tagged_at', 'last_tagged_by',
+            'is_eligible', 'eligibility_status', 'can_be_tagged',
+            'eligibility_threshold_ab', 'eligibility_threshold_ip', 'next_tag_cost'
         ]
-        read_only_fields = ['acquired_at', 'created_at', 'updated_at', 'age']
+        read_only_fields = ['acquired_at', 'created_at', 'updated_at', 'age', 'last_tagged_at']
     
     def get_team(self, obj):
         if obj.team:
@@ -49,6 +62,15 @@ class ProspectSerializer(serializers.ModelSerializer):
                 'is_expired': bid.is_expired
             }
         return None
+    
+    def get_last_tagged_by(self, obj):
+        if obj.last_tagged_by:
+            return {
+                'id': obj.last_tagged_by.id,
+                'name': obj.last_tagged_by.name,
+                'owner': obj.last_tagged_by.owner.username if obj.last_tagged_by.owner else None
+            }
+        return None
 
 
 class ProspectCreateSerializer(serializers.ModelSerializer):
@@ -76,19 +98,32 @@ class ProspectUpdateSerializer(serializers.ModelSerializer):
         return data
 
 
-class ProspectTransferSerializer(serializers.Serializer):
-    new_team_id = serializers.IntegerField()
+class ProspectTransferSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Prospect
+        fields = ['team']
     
-    def validate_new_team_id(self, value):
-        from teams.models import Team
-        try:
-            Team.objects.get(id=value)
-        except Team.DoesNotExist:
-            raise serializers.ValidationError("Team does not exist")
-        return value
+    def validate(self, data):
+        # Only admins can transfer prospects
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            if not request.user.is_staff:
+                raise serializers.ValidationError("Only admins can transfer prospects")
+        return data
+
+
+class ProspectTagSerializer(serializers.Serializer):
+    """Serializer for tagging a prospect"""
     
-    def save(self, **kwargs):
-        from teams.models import Team
-        new_team = Team.objects.get(id=self.validated_data['new_team_id'])
-        self.instance.transfer_to_team(new_team)
-        return self.instance 
+    def validate(self, data):
+        prospect = self.context.get('prospect')
+        team = self.context.get('request').user.team
+        
+        if not prospect.can_be_tagged:
+            raise serializers.ValidationError("This prospect cannot be tagged")
+        
+        tag_cost = prospect.next_tag_cost
+        if team.pom_balance < tag_cost:
+            raise serializers.ValidationError(f"Your team does not have enough POM to tag this prospect (cost: {tag_cost} POM)")
+        
+        return data 

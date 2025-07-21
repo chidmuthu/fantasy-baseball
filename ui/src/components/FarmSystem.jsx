@@ -77,9 +77,30 @@ function FarmSystem() {
                       backgroundColor: '#f8f9fa', 
                       borderRadius: '2px',
                       fontSize: '0.9rem',
-                      borderLeft: '3px solid #667eea'
+                      borderLeft: `3px solid ${prospect.is_eligible ? '#28a745' : '#dc3545'}`
                     }}>
-                      <strong>{prospect.name}</strong> - {prospect.position}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <strong>{prospect.name}</strong> - {prospect.position}
+                        </div>
+                        <div style={{ 
+                          fontSize: '0.8rem',
+                          color: prospect.is_eligible ? '#28a745' : '#dc3545',
+                          fontWeight: 'bold'
+                        }}>
+                          {prospect.is_eligible ? '✓' : '✗'}
+                        </div>
+                      </div>
+                      {prospect.tags_applied > 0 && (
+                        <div style={{ 
+                          fontSize: '0.7rem', 
+                          color: '#666', 
+                          fontStyle: 'italic',
+                          marginTop: '2px'
+                        }}>
+                          Tags: {prospect.tags_applied}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

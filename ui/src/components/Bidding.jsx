@@ -220,6 +220,38 @@ function Bidding() {
                 <p><span>Level:</span> {bid.prospect.level}</p>
                 <p><span>ETA:</span> {bid.prospect.eta}</p>
                 <p><span>Age:</span> {bid.prospect.age}</p>
+                
+                {/* Eligibility Information */}
+                <div style={{ 
+                  marginTop: '8px', 
+                  padding: '6px', 
+                  backgroundColor: bid.prospect.is_eligible ? '#e8f5e8' : '#ffe8e8',
+                  borderRadius: '4px',
+                  border: `1px solid ${bid.prospect.is_eligible ? '#4caf50' : '#f44336'}`
+                }}>
+                  <p style={{ 
+                    margin: '0', 
+                    fontWeight: 'bold',
+                    fontSize: '0.9rem',
+                    color: bid.prospect.is_eligible ? '#2e7d32' : '#c62828'
+                  }}>
+                    {bid.prospect.eligibility_status}
+                  </p>
+                  {bid.prospect.position === 'P' ? (
+                    <p style={{ margin: '2px 0 0 0', fontSize: '0.8rem' }}>
+                      IP: {bid.prospect.innings_pitched} / {bid.prospect.eligibility_threshold_ip}
+                    </p>
+                  ) : (
+                    <p style={{ margin: '2px 0 0 0', fontSize: '0.8rem' }}>
+                      AB: {bid.prospect.at_bats} / {bid.prospect.eligibility_threshold_ab}
+                    </p>
+                  )}
+                  {bid.prospect.tags_applied > 0 && (
+                    <p style={{ margin: '2px 0 0 0', fontSize: '0.8rem', fontStyle: 'italic' }}>
+                      Tags: {bid.prospect.tags_applied}
+                    </p>
+                  )}
+                </div>
               </div>
               
               <div className="bid-section">

@@ -58,16 +58,16 @@ class Command(BaseCommand):
             test_teams.append(team)
             self.stdout.write(f'Created {name} (POM: {team.pom_balance})')
 
-        # Create test prospects
+        # Create test prospects with varying stats to demonstrate eligibility
         prospect_data = [
-            {'name': 'Jackson Holliday', 'position': 'SS', 'organization': 'Baltimore Orioles', 'date_of_birth': '2003-01-01', 'level': 'A', 'eta': 2025},
-            {'name': 'Junior Caminero', 'position': '3B', 'organization': 'Tampa Bay Rays', 'date_of_birth': '2003-03-02', 'level': 'A', 'eta': 2025},
-            {'name': 'Wyatt Flores', 'position': 'P', 'organization': 'Milwaukee Brewers', 'date_of_birth': '2004-05-03', 'level': 'A+', 'eta': 2027},
-            {'name': 'Ethan Salas', 'position': 'C', 'organization': 'San Diego Padres', 'date_of_birth': '2006-07-04', 'level': 'AAA', 'eta': 2025},
-            {'name': 'Jackson Chourio', 'position': 'OF', 'organization': 'Milwaukee Brewers', 'date_of_birth': '2004-09-05', 'level': 'A', 'eta': 2025},
-            {'name': 'Paul Skenes', 'position': 'P', 'organization': 'Pittsburgh Pirates', 'date_of_birth': '2002-11-06', 'level': 'MLB', 'eta': 2024},
-            {'name': 'Dylan Crews', 'position': 'OF', 'organization': 'Washington Nationals', 'date_of_birth': '2002-12-07', 'level': 'AA', 'eta': 2026},
-            {'name': 'Roki Sasaki', 'position': 'P', 'organization': 'Los Angeles Dodgers', 'date_of_birth': '2001-02-08', 'level': 'ROK', 'eta': 2028},
+            {'name': 'Jackson Holliday', 'position': 'SS', 'organization': 'Baltimore Orioles', 'date_of_birth': '2003-01-01', 'level': 'A', 'eta': 2025, 'at_bats': 120, 'innings_pitched': 0.0},
+            {'name': 'Junior Caminero', 'position': '3B', 'organization': 'Tampa Bay Rays', 'date_of_birth': '2003-03-02', 'level': 'A', 'eta': 2025, 'at_bats': 160, 'innings_pitched': 0.0},
+            {'name': 'Wyatt Flores', 'position': 'P', 'organization': 'Milwaukee Brewers', 'date_of_birth': '2004-05-03', 'level': 'A+', 'eta': 2027, 'at_bats': 0, 'innings_pitched': 45.0},
+            {'name': 'Ethan Salas', 'position': 'C', 'organization': 'San Diego Padres', 'date_of_birth': '2006-07-04', 'level': 'AAA', 'eta': 2025, 'at_bats': 200, 'innings_pitched': 0.0},
+            {'name': 'Jackson Chourio', 'position': 'OF', 'organization': 'Milwaukee Brewers', 'date_of_birth': '2004-09-05', 'level': 'A', 'eta': 2025, 'at_bats': 50, 'innings_pitched': 0.0},
+            {'name': 'Paul Skenes', 'position': 'P', 'organization': 'Pittsburgh Pirates', 'date_of_birth': '2002-11-06', 'level': 'MLB', 'eta': 2024, 'at_bats': 0, 'innings_pitched': 60.0},
+            {'name': 'Dylan Crews', 'position': 'OF', 'organization': 'Washington Nationals', 'date_of_birth': '2002-12-07', 'level': 'AA', 'eta': 2026, 'at_bats': 30, 'innings_pitched': 0.0},
+            {'name': 'Roki Sasaki', 'position': 'P', 'organization': 'Los Angeles Dodgers', 'date_of_birth': '2001-02-08', 'level': 'ROK', 'eta': 2028, 'at_bats': 0, 'innings_pitched': 25.0},
         ]
 
         prospects = []
@@ -78,6 +78,25 @@ class Command(BaseCommand):
             )
             prospects.append(prospect)
             self.stdout.write(f'Created prospect: {prospect.name}')
+        
+        # Add some tags to demonstrate the tagging system
+        # Tag Ethan Salas (ineligible due to 200 AB) to make him eligible again
+        if len(prospects) >= 4:
+            ethan_salas = prospects[3]  # Ethan Salas
+            ethan_salas.tags_applied = 1
+            ethan_salas.last_tagged_at = timezone.now()
+            ethan_salas.last_tagged_by = test_teams[0]
+            ethan_salas.save()
+            self.stdout.write(f'Tagged {ethan_salas.name} (1 tag applied)')
+        
+        # Tag Paul Skenes (ineligible due to 60 IP) to make him eligible again
+        if len(prospects) >= 6:
+            paul_skenes = prospects[5]  # Paul Skenes
+            paul_skenes.tags_applied = 1
+            paul_skenes.last_tagged_at = timezone.now()
+            paul_skenes.last_tagged_by = test_teams[1]
+            paul_skenes.save()
+            self.stdout.write(f'Tagged {paul_skenes.name} (1 tag applied)')
 
         # Create bids with different starting times
         bid_start_times = [
