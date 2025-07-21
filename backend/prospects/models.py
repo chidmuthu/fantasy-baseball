@@ -128,20 +128,12 @@ class Prospect(models.Model):
             return "Ineligible"
     
     @property
-    def can_be_tagged(self):
-        """Check if prospect can be tagged (on a team, eligible)"""
-        return (self.team is not None and 
-                self.is_eligible)
-    
-    @property
     def next_tag_cost(self):
         """Calculate the cost for the next tag (5, 10, 20, 40, etc.)"""
         return 5 * (2 ** self.tags_applied)
     
     def tag_prospect(self, team):
         """Tag a prospect to extend eligibility (cost doubles each time)"""
-        if not self.can_be_tagged:
-            raise ValueError("Prospect cannot be tagged")
         
         tag_cost = self.next_tag_cost
         if team.pom_balance < tag_cost:

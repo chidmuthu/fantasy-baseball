@@ -340,7 +340,7 @@ function TeamDetail() {
                           fontWeight: 'bold',
                           color: prospect.is_eligible ? '#2e7d32' : '#c62828'
                         }}>
-                          Eligibility: {prospect.eligibility_status}
+                          {prospect.eligibility_status}
                         </p>
                         {prospect.position === 'P' ? (
                           <p style={{ margin: '2px 0 0 0', fontSize: '0.9rem' }}>
@@ -350,12 +350,10 @@ function TeamDetail() {
                           <p style={{ margin: '2px 0 0 0', fontSize: '0.9rem' }}>
                             AB: {prospect.at_bats} / {prospect.eligibility_threshold_ab}
                           </p>
-                        )}
-                        {prospect.tags_applied > 0 && (
+                        )}                    
                           <p style={{ margin: '2px 0 0 0', fontSize: '0.9rem', fontStyle: 'italic' }}>
                             Tags applied: {prospect.tags_applied}
                           </p>
-                        )}
                       </div>
                     </div>
 
@@ -379,20 +377,17 @@ function TeamDetail() {
                           >
                             Edit
                           </button>
-                          {prospect.can_be_tagged && (
-                            <button 
-                              className="btn btn-warning"
-                              style={{ fontSize: '0.8rem', padding: '5px 10px' }}
-                              onClick={() => {
-                                if (window.confirm(`Tag this prospect to extend eligibility? This will cost ${prospect.next_tag_cost} POM.`)) {
-                                  tagProspect(prospect.id)
-                                }
-                              }}
-                            >
-                              Tag ({prospect.next_tag_cost} POM)
-                            </button>
-                          )}
-
+                          <button 
+                            className="btn btn-warning"
+                            style={{ fontSize: '0.8rem', padding: '5px 10px' }}
+                            onClick={() => {
+                              if (window.confirm(`Tag this prospect to extend eligibility? This will cost ${prospect.next_tag_cost} POM.`)) {
+                                tagProspect(prospect.id)
+                              }
+                            }}
+                          >
+                            Tag ({prospect.next_tag_cost} POM)
+                          </button>
                         </div>
                       )}
                     </div>

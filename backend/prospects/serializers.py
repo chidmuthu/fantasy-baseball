@@ -12,7 +12,6 @@ class ProspectSerializer(serializers.ModelSerializer):
     # Eligibility fields
     is_eligible = serializers.ReadOnlyField()
     eligibility_status = serializers.ReadOnlyField()
-    can_be_tagged = serializers.ReadOnlyField()
     eligibility_threshold_ab = serializers.ReadOnlyField()
     eligibility_threshold_ip = serializers.ReadOnlyField()
     next_tag_cost = serializers.ReadOnlyField()
@@ -26,8 +25,8 @@ class ProspectSerializer(serializers.ModelSerializer):
             'is_available', 'current_bid',
             # Eligibility fields
             'at_bats', 'innings_pitched', 'tags_applied', 'last_tagged_at', 'last_tagged_by',
-            'is_eligible', 'eligibility_status', 'can_be_tagged',
-            'eligibility_threshold_ab', 'eligibility_threshold_ip', 'next_tag_cost'
+            'is_eligible', 'eligibility_status', 'eligibility_threshold_ab', 'eligibility_threshold_ip',
+            'next_tag_cost'
         ]
         read_only_fields = ['acquired_at', 'created_at', 'updated_at', 'age', 'last_tagged_at']
     
@@ -118,9 +117,6 @@ class ProspectTagSerializer(serializers.Serializer):
     def validate(self, data):
         prospect = self.context.get('prospect')
         team = self.context.get('request').user.team
-        
-        if not prospect.can_be_tagged:
-            raise serializers.ValidationError("This prospect cannot be tagged")
         
         tag_cost = prospect.next_tag_cost
         if team.pom_balance < tag_cost:

@@ -142,16 +142,6 @@ function FarmSystem() {
                           {prospect.is_eligible ? '✓' : '✗'}
                         </div>
                       </div>
-                      {prospect.tags_applied > 0 && (
-                        <div style={{ 
-                          fontSize: '0.7rem', 
-                          color: '#666', 
-                          fontStyle: 'italic',
-                          marginTop: '2px'
-                        }}>
-                          Tags: {prospect.tags_applied}
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
