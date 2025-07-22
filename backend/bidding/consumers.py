@@ -72,6 +72,14 @@ class BiddingConsumer(AsyncWebsocketConsumer):
             'type': 'new_bid',
             'data': event['data']
         }))
+    
+    async def bid_placed(self, event):
+        """Send bid placed notification to WebSocket"""
+        await self.send(text_data=json.dumps({
+            'type': 'bid_placed',
+            'bid_id': event['bid_id'],
+            'data': event['data']
+        }))
 
 
 class TeamConsumer(AsyncWebsocketConsumer):

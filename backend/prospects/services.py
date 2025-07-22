@@ -205,7 +205,6 @@ class BaseballDataService:
         """
         Get innings pitched for a player
         """
-        logger.info(f"Getting innings pitched for {mlb_id}")
         stats = pitching_stats_range('2022-05-01', date.today().strftime('%Y-%m-%d'))
         return stats[stats['mlbID'].astype(int) == mlb_id]['IP'].iloc[0]
     

@@ -35,10 +35,12 @@ function Bidding() {
     }
     
     ws.onmessage = (event) => {
+      console.log('WebSocket message received:', event.data)
       const data = JSON.parse(event.data)
       
       // Handle different types of WebSocket messages
       if (data.type === 'bid_placed' || data.type === 'bid_completed' || data.type === 'new_bid') {
+        console.log('Refreshing bids due to:', data.type)
         // Refresh bids when any bid activity occurs
         loadBids()
         refreshTeam()

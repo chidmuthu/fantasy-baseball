@@ -25,7 +25,7 @@ app.conf.beat_schedule = {
     },
     'update-prospect-stats-daily': {
         'task': 'prospects.tasks.update_prospect_stats',
-        'schedule': crontab(hour=3, minute=0),  # Daily at 3 AM
+        'schedule': 30.0,  # Daily at 3 AM
     },
     # 'cleanup-old-bids-daily': {
     #     'task': 'bidding.tasks.cleanup_old_bids',

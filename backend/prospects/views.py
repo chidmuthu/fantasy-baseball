@@ -82,9 +82,7 @@ class ProspectViewSet(viewsets.ModelViewSet):
     def update_all_stats(self, request):
         """Update MLB stats for all prospects from external sources"""
         try:
-            # Trigger the background task for all prospects
             task = update_prospect_stats.delay()
-
             logger.info(f"Stats update started for all prospects")
             
             return Response({
@@ -94,6 +92,7 @@ class ProspectViewSet(viewsets.ModelViewSet):
             })
             
         except Exception as e:
+            logger.error(f"Exception occurred: {e}")
             return Response(
                 {'error': f'Failed to start stats update: {str(e)}'}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

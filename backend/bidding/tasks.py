@@ -178,6 +178,8 @@ def notify_bid_placed(bid_id):
             'bid_id': bid.id,
         }
         
+        logger.info(f"📢 Sending WebSocket notification for bid placed: {bid.prospect.name}")
+        
         # Send to general bidding channel
         async_to_sync(channel_layer.group_send)(
             "bidding_updates",
