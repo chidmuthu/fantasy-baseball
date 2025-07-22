@@ -2,11 +2,11 @@ Django==4.2.7
 djangorestframework==3.14.0
 django-cors-headers==4.3.1
 djangorestframework-simplejwt==5.5.0
-channels-redis==4.2.1
+channels==4.0.0
 django-filter==23.3
 psycopg2-binary==2.9.9
 python-decouple==3.8
 celery==5.3.4
-redis==5.0.1
+daphne==4.0.0
 setuptools==80.9.0
 pybaseball==2.2.7

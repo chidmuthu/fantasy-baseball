@@ -21,8 +21,8 @@ A Django-based backend API for managing dynasty fantasy baseball league farm sys
 - **Django Channels**: WebSocket support
 - **JWT Authentication**: Secure token-based auth
 - **SQLite/PostgreSQL**: Database (SQLite for development, PostgreSQL for production)
-- **Redis**: Message broker for Celery and Channels
-- **Celery**: Background task processing
+- **Django Channels**: WebSocket support with in-memory backend
+- **Celery**: Background task processing with in-memory broker
 
 ## Quick Start
 
@@ -189,8 +189,6 @@ SECRET_KEY=your-secret-key-here
 DEBUG=False
 ALLOWED_HOSTS=your-domain.com
 DATABASE_URL=postgresql://user:password@localhost/dbname
-CELERY_BROKER_URL=redis://localhost:6379/0
-CELERY_RESULT_BACKEND=redis://localhost:6379/0
 ```
 
 ### Database
@@ -214,7 +212,7 @@ python manage.py collectstatic
 ```
 
 ### WebSocket Support
-For production WebSocket support, use Daphne or uvicorn with ASGI.
+For production WebSocket support, use Daphne with ASGI.
 
 ## Security Considerations
 

@@ -16,36 +16,29 @@
 ### 3. **Background Task Processing**
 - ✅ Celery worker for processing tasks
 - ✅ Celery beat scheduler for periodic tasks
-- ✅ Redis as message broker and result backend
+- ✅ In-memory message broker and result backend
 
 ## Setup Instructions
 
-### Step 1: Install Redis
+### Step 1: Install Dependencies
 
 **Ubuntu/Debian:**
 ```bash
 sudo apt update
-sudo apt install redis-server
-sudo systemctl start redis-server
-sudo systemctl enable redis-server
+sudo apt install python3 python3-pip python3-venv
 ```
 
 **macOS:**
 ```bash
-brew install redis
-brew services start redis
+# No additional system dependencies needed
 ```
 
 **Windows:**
-Download from https://redis.io/download or use WSL
-
-### Step 2: Test Redis Connection
 ```bash
-redis-cli ping
-# Should return: PONG
+# No additional system dependencies needed
 ```
 
-### Step 3: Start Celery Services
+### Step 2: Start Celery Services
 
 **Option A: Use the helper script (Recommended for development)**
 ```bash
@@ -67,7 +60,7 @@ cd baseball/backend
 celery -A farm_system beat --loglevel=info
 ```
 
-### Step 4: Test the Setup
+### Step 3: Test the Setup
 
 1. **Start your Django server:**
 ```bash
@@ -104,22 +97,21 @@ You should see in the Celery worker logs:
 ### Environment Variables
 ```bash
 # .env file
-CELERY_BROKER_URL=redis://localhost:6379/0
-CELERY_RESULT_BACKEND=redis://localhost:6379/0
 BID_EXPIRATION_HOURS=24  # or shorter for testing
 ```
 
 ### Development vs Production
 
 **Development:**
-- Uses in-memory channel layer (no Redis needed for WebSockets)
-- Uses Redis for Celery only
+- Uses in-memory channel layer for WebSockets
+- Uses in-memory broker for Celery
 - Short bid expiration for testing
 
 **Production:**
-- Uses Redis for both Channels and Celery
+- Uses in-memory channel layer for WebSockets
+- Uses in-memory broker for Celery
 - Longer bid expiration (24 hours)
-- Multiple Celery workers for scalability
+- Single server deployment (can scale to multiple servers with Redis later)
 
 ## Monitoring
 
@@ -147,19 +139,13 @@ celery -A farm_system call bidding.tasks.cleanup_old_bids
 
 ### Common Issues
 
-1. **Redis Connection Error:**
+1. **Celery Worker Not Starting:**
 ```bash
-# Check if Redis is running
-redis-cli ping
+# Check if all dependencies are installed
+pip install -r requirements.txt
 
-# Check Redis logs
-sudo journalctl -u redis-server
-```
-
-2. **Celery Worker Not Starting:**
-```bash
-# Check if Redis is accessible
-python -c "import redis; r = redis.Redis(); print(r.ping())"
+# Check if Django settings are correct
+python manage.py check
 ```
 
 3. **Tasks Not Running:**
@@ -208,7 +194,7 @@ Create service files for both worker and beat scheduler.
 2. **Monitor the logs** to ensure everything works
 3. **Adjust bid expiration** for production use
 4. **Set up monitoring** for production deployment
-5. **Configure backup** for Redis data
+5. **Consider Redis** if you need to scale to multiple servers
 
 ## Files Created/Modified
 
@@ -216,6 +202,6 @@ Create service files for both worker and beat scheduler.
 - ✅ `farm_system/__init__.py` - Celery app import
 - ✅ `bidding/tasks.py` - Background tasks
 - ✅ `bidding/models.py` - Added notification triggers
-- ✅ `farm_system/settings.py` - Updated channel layers
+- ✅ `farm_system/settings.py` - Updated channel layers (in-memory)
 - ✅ `start_celery.py` - Development helper script
 - ✅ `CELERY_SETUP.md` - This guide 
