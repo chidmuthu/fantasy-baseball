@@ -179,10 +179,6 @@ EOF
 sudo ln -sf /etc/nginx/sites-available/baseball /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
 
-# Create log directory for Django
-sudo mkdir -p /var/log/baseball
-sudo chown $(whoami):$(whoami) /var/log/baseball
-
 # Test Nginx config
 sudo nginx -t
 
