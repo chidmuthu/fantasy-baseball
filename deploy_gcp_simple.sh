@@ -63,6 +63,8 @@ npm install
 
 # Build for production
 echo "🔨 Building frontend..."
+# Create production environment file
+echo "VITE_API_URL=http://$SERVER_IP/api" > .env.production
 npm run build
 
 # Copy the built files to the Nginx directory
