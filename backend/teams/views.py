@@ -107,14 +107,24 @@ class UserRegistrationViewSet(viewsets.GenericViewSet):
     
     def create(self, request):
         """Register a new user and create their team"""
+        logger.debug(f"Registration attempt - Data: {request.data}")
+        logger.debug(f"Registration attempt - User: {request.user}")
+        logger.debug(f"Registration attempt - Method: {request.method}")
+        logger.debug(f"Registration attempt - URL: {request.path}")
+        
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
+            logger.info(f"Registration successful for user: {serializer.validated_data.get('username')}")
             user = serializer.save()
+            logger.info(f"Created user ID: {user.id}, team ID: {user.team.id}")
             return Response({
                 'message': 'User registered successfully',
                 'user_id': user.id,
                 'team_id': user.team.id
             }, status=status.HTTP_201_CREATED)
+        else:
+            logger.warning(f"Registration failed - Errors: {serializer.errors}")
+            logger.debug(f"Registration failed - Invalid data: {request.data}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
 
 

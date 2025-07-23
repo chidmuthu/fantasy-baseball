@@ -1,6 +1,9 @@
+import logging
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Team
+
+logger = logging.getLogger(__name__)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -57,22 +60,29 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         fields = ['username', 'email', 'password', 'password_confirm', 'team_name']
     
     def validate(self, data):
+        logger.debug(f"Validating registration data: {list(data.keys())}")
         if data['password'] != data['password_confirm']:
+            logger.warning("Password validation failed - passwords don't match")
             raise serializers.ValidationError("Passwords don't match")
+        logger.debug("Password validation passed")
         return data
     
     def create(self, validated_data):
+        logger.debug(f"Creating user with data: {list(validated_data.keys())}")
         team_name = validated_data.pop('team_name')
         validated_data.pop('password_confirm')
         
+        logger.debug(f"Creating user: {validated_data.get('username')}")
         user = User.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],
             password=validated_data['password']
         )
         
+        logger.debug(f"Updating team name to: {team_name}")
         # Update the team name
         user.team.name = team_name
         user.team.save()
         
+        logger.info(f"Successfully created user {user.username} with team {user.team.name}")
         return user 

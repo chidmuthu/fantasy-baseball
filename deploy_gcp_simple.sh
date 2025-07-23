@@ -31,7 +31,7 @@ echo "📦 Installing/updating Python dependencies..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
-ENV_FILE="/home/muthu/farm.env"
+ENV_FILE=".env"
 # Generate secret key and create .env
 if [ ! -f "$ENV_FILE" ]; then
     SECRET_KEY=$(python3 -c "import secrets; print(''.join(secrets.choice('abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)') for i in range(50)))")
@@ -42,7 +42,7 @@ DEBUG=False
 ALLOWED_HOSTS=$SERVER_IP,localhost,127.0.0.1
 BID_EXPIRATION_MINUTES=1440
 EOF
-    echo "✅ Created $ENV_FILE"
+    echo "✅ Created new $ENV_FILE"
 else
     echo "✅ Environment file already exists, skipping creation"
 fi
@@ -103,7 +103,6 @@ Type=simple
 User=$(whoami)
 WorkingDirectory=$APP_DIR/backend
 Environment=PATH=$APP_DIR/backend/venv/bin
-Environment=ENV_FILE=$ENV_FILE
 ExecStart=$APP_DIR/backend/venv/bin/celery -A farm_system worker --loglevel=info
 Restart=always
 RestartSec=3
@@ -179,6 +178,10 @@ EOF
 # Enable site
 sudo ln -sf /etc/nginx/sites-available/baseball /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
+
+# Create log directory for Django
+sudo mkdir -p /var/log/baseball
+sudo chown $(whoami):$(whoami) /var/log/baseball
 
 # Test Nginx config
 sudo nginx -t

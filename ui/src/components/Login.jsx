@@ -240,20 +240,6 @@ function Login() {
                         {isRegistering ? 'Already have an account? Login' : 'Need an account? Register'}
                     </button>
                 </div>
-
-                {!isRegistering && (
-                    <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '5px' }}>
-                        <h4>Test Accounts</h4>
-                        <p>For testing, you can use these pre-created accounts:</p>
-                        <ul style={{ textAlign: 'left' }}>
-                            <li><strong>Username:</strong> test_user_1, <strong>Password:</strong> testpass123</li>
-                            <li><strong>Username:</strong> test_user_2, <strong>Password:</strong> testpass123</li>
-                            <li><strong>Username:</strong> test_user_3, <strong>Password:</strong> testpass123</li>
-                            <li><strong>Username:</strong> test_user_4, <strong>Password:</strong> testpass123</li>
-                            <li><strong>Username:</strong> test_user_5, <strong>Password:</strong> testpass123</li>
-                        </ul>
-                    </div>
-                )}
             </div>
         </div>
     )
