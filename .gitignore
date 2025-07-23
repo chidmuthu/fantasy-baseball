@@ -4,5 +4,5 @@ ui/node_modules/
 ui/dist/
 __pycache__/
 backend/celerybeat-schedule
-# ignore all env files
-*.env
+backend/staticfiles/
+backend/.env
