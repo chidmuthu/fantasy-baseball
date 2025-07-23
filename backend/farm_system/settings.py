@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'bidding',
 ]
 
-MIDLEWARE = [
+MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
