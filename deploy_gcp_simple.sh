@@ -31,7 +31,7 @@ echo "📦 Installing/updating Python dependencies..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
-ENV_FILE="/home/$(whoami)/farm.env"
+ENV_FILE="/home/muthu/farm.env"
 # Generate secret key and create .env
 if [ ! -f "$ENV_FILE" ]; then
     SECRET_KEY=$(python3 -c "import secrets; print(''.join(secrets.choice('abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)') for i in range(50)))")
@@ -64,6 +64,11 @@ npm install
 # Build for production
 echo "🔨 Building frontend..."
 npm run build
+
+# Copy the built files to the Nginx directory
+sudo cp -r $APP_DIR/ui/dist/* /var/www/baseball/
+sudo chown -R www-data:www-data /var/www/baseball
+sudo chmod -R 755 /var/www/baseball
 
 # Create systemd service files
 echo "🔧 Creating/updating systemd services..."
@@ -98,6 +103,7 @@ Type=simple
 User=$(whoami)
 WorkingDirectory=$APP_DIR/backend
 Environment=PATH=$APP_DIR/backend/venv/bin
+Environment=ENV_FILE=$ENV_FILE
 ExecStart=$APP_DIR/backend/venv/bin/celery -A farm_system worker --loglevel=info
 Restart=always
 RestartSec=3
@@ -134,7 +140,7 @@ server {
     
     # Frontend static files
     location / {
-        root $APP_DIR/ui/dist;
+        root /var/www/baseball;
         try_files \$uri \$uri/ /index.html;
     }
     
