@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'bidding',
 ]
 
-MIDDLEWARE = [
+MIDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -195,9 +195,19 @@ LOGGING = {
             'level': 'DEBUG' if DEBUG else 'INFO',
             'propagate': False,
         },
+        'farm_system': {
+            'handlers': ['console'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'propagate': False,
+        },
     },
     'root': {
         'handlers': ['console'],
         'level': 'INFO',
     },
-} 
+}
+
+# Add startup logging
+import logging
+logger = logging.getLogger(__name__)
+logger.info("🚀 Django settings loaded - DEBUG=%s, ALLOWED_HOSTS=%s", DEBUG, ALLOWED_HOSTS) 
