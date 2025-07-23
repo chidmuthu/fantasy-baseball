@@ -1,6 +1,7 @@
 backend/venv/
 backend/db.sqlite3
 ui/node_modules/
+ui/dist/
 __pycache__/
 backend/celerybeat-schedule
 # ignore all env files
